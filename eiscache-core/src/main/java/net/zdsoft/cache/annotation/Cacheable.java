@@ -33,6 +33,12 @@ public @interface Cacheable {
     int expire() default 0;
 
     /**
+     * 最大存活时间，无论这个缓存在此期间有没有被访问
+     * 单位秒
+     */
+    TimeToLive timeToLive() default TimeToLive.THIRTY_MINUTES;
+
+    /**
      * 缓存条件支持spring EL 表达式 ，如果表达式结果为false将不会缓存<br>
      * ex:
      * <ul>

@@ -5,4 +5,5 @@ package net.zdsoft.cache.configuration;
  * @since 17-9-3下午11:27
  */
 public interface Configuration {
+
 }
