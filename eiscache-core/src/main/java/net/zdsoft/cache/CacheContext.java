@@ -1,6 +1,7 @@
 package net.zdsoft.cache;
 
 import net.zdsoft.cache.expression.CacheExpressionEvaluator;
+import net.zdsoft.cache.interceptor.CacheOperationParser;
 import org.springframework.beans.factory.BeanFactory;
 
 /**
@@ -18,6 +19,11 @@ public class CacheContext {
     }
 
     public static BeanFactory getBeanFactory(){
+        return null;
+    }
+
+    public static CacheOperationParser getCacheOperationParser() {
+
         return null;
     }
 }

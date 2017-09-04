@@ -2,7 +2,7 @@ package net.zdsoft.cache;
 
 import net.zdsoft.cache.configuration.CacheConfiguration;
 import net.zdsoft.cache.event.CacheEvent;
-import net.zdsoft.cache.event.CacheRemoveListener;
+import net.zdsoft.cache.listener.CacheRemoveListener;
 import net.zdsoft.cache.event.EventType;
 
 import java.util.Set;

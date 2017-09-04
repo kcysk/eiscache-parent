@@ -1,6 +1,6 @@
 package net.zdsoft.cache;
 
-import net.zdsoft.cache.configuration.Configuration;
+import net.zdsoft.cache.configuration.CacheConfiguration;
 
 /**
  * @author shenke
@@ -8,7 +8,7 @@ import net.zdsoft.cache.configuration.Configuration;
  */
 public interface CacheManager {
 
-    <C extends Configuration> Cache createCache(String name, C configuration);
+    <C extends CacheConfiguration> Cache createCache(String name, C configuration);
 
     Cache getCache(String cacheName);
 

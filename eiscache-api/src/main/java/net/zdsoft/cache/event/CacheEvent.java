@@ -13,8 +13,9 @@ public abstract class CacheEvent extends EventObject {
     private Cache cache;
     private EventType eventType;
 
-    public CacheEvent(Object source, Cache cache) {
+    public CacheEvent(EventType source, Cache cache) {
         super(source);
+        this.eventType = source;
         this.cache = cache;
     }
 

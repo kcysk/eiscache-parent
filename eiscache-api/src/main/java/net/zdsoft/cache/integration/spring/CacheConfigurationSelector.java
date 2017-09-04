@@ -1,4 +1,4 @@
-package net.zdsoft.cache.configuration;
+package net.zdsoft.cache.integration.spring;
 
 import net.zdsoft.cache.annotation.EnableCache;
 import org.springframework.context.annotation.AdviceMode;

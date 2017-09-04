@@ -1,15 +1,15 @@
 package net.zdsoft.cache.interceptor;
 
 import net.zdsoft.cache.annotation.CacheDefault;
-import net.zdsoft.cache.annotation.CacheOperation;
+import net.zdsoft.cache.core.CacheOperation;
+import net.zdsoft.cache.annotation.CacheRemove;
 import net.zdsoft.cache.annotation.Cacheable;
+import net.zdsoft.cache.core.support.CacheRemoveOperation;
+import net.zdsoft.cache.core.support.CacheableOperation;
 import org.springframework.core.MethodClassKey;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author shenke
@@ -33,10 +33,17 @@ final public class CacheOperationParser {
         //解析
         CacheDefault cacheDefault = targetClass.getAnnotation(CacheDefault.class);
 
+        cacheOperations = new ArrayList<>();
         Cacheable cacheable = method.getAnnotation(Cacheable.class);
-
-
-        return null;
+        if ( cacheable != null ){
+            cacheOperations.add(parseCacheable(cacheable, cacheDefault));
+        }
+        CacheRemove cacheRemove = method.getAnnotation(CacheRemove.class);
+        if ( cacheRemove != null ) {
+            cacheOperations.add(parseCacheRemove(cacheRemove, cacheDefault));
+        }
+        cached.put(key, cacheOperations);
+        return cacheOperations;
     }
 
     private CacheOperation parseCacheable(Cacheable cacheable, CacheDefault cacheDefault) {
@@ -48,12 +55,24 @@ final public class CacheOperationParser {
                 .setCacheName(cacheable.cacheName())
                 .setKey(cacheable.key())
                 .setCondition(cacheable.condition());
-
-        CacheableOperation cacheableOperation = new CacheableOperation(builder);
-        if ( cacheableOperation.getCacheName().equals("") ) {
-
+        if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
+            builder.setCacheName(cacheDefault.cacheName());
         }
+        CacheableOperation cacheableOperation = new CacheableOperation(builder);
         return cacheableOperation;
+    }
+
+    private CacheOperation parseCacheRemove(CacheRemove cacheRemove, CacheDefault cacheDefault) {
+        CacheRemoveOperation.Builder builder = new CacheRemoveOperation.Builder();
+        builder.setAfterInvocation(cacheRemove.afterInvocation())
+                .setCacheName(cacheRemove.cacheName())
+                .setCondition(cacheRemove.condition())
+                .setKey(cacheRemove.key());
+        if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
+            builder.setCacheName(cacheDefault.cacheName());
+        }
+        CacheRemoveOperation cacheRemoveOperation = new CacheRemoveOperation(builder);
+        return cacheRemoveOperation;
     }
 
 }

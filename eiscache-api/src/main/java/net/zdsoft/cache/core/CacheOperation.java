@@ -1,10 +1,12 @@
-package net.zdsoft.cache.annotation;
+package net.zdsoft.cache.core;
 
 /**
  * @author shenke
  * @since 2017.09.04
  */
 public abstract class CacheOperation {
+
+    private CacheOperationMetaData operationMetaData;
 
     private String cacheName;
     private String key;
@@ -47,6 +49,10 @@ public abstract class CacheOperation {
         public Builder setCondition(String condition) {
             this.condition = condition;
             return this;
+        }
+
+        public String getCacheName() {
+            return cacheName;
         }
 
         public static Builder builder() {

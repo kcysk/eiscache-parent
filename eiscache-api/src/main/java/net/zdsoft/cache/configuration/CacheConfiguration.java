@@ -1,6 +1,6 @@
 package net.zdsoft.cache.configuration;
 
-import net.zdsoft.cache.event.CacheEventListener;
+import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.expiry.ExpiryPolicy;
 
 /**

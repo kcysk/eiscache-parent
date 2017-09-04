@@ -1,4 +1,6 @@
-package net.zdsoft.cache.event;
+package net.zdsoft.cache.listener;
+
+import net.zdsoft.cache.event.CacheEvent;
 
 /**
  * @author shenke

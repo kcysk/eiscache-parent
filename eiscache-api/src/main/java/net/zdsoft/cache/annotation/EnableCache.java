@@ -1,6 +1,6 @@
 package net.zdsoft.cache.annotation;
 
-import net.zdsoft.cache.configuration.CacheConfigurationSelector;
+import net.zdsoft.cache.integration.spring.CacheConfigurationSelector;
 import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;

@@ -1,6 +1,6 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.core.support;
 
-import net.zdsoft.cache.annotation.CacheOperation;
+import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.annotation.TimeToLive;
 
 import java.util.concurrent.TimeUnit;

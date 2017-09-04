@@ -1,6 +1,7 @@
 package net.zdsoft.cache.interceptor;
 
-import net.zdsoft.cache.annotation.CacheInvocationContext;
+import net.zdsoft.cache.Handler;
+import net.zdsoft.cache.core.CacheInvocationContext;
 
 import java.lang.reflect.Method;
 
@@ -10,15 +11,26 @@ import java.lang.reflect.Method;
  */
 public abstract class CacheAopExecutor {
 
-    public Object execute(Invoker invoker, Object target, Method method, Object[] args, Class<?> returnType) {
+    private Handler handler;
 
-        return invoker.invoke();
+    public Object execute(Handler.Invoker invoker, Object target, Method method, Object[] args, Class<?> returnType) {
+
+        try {
+
+            return invoker.invoke();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+        return null;
     }
 
-    protected CacheInvocationContext createInvocationContext(Object target, Method method, Object[] args) {
-        CacheInvocationContext invocationContext = new DefaultCacheInvocationContext(target, method, args);
-        //invocationContext.evaluate(
+    public Object execute(Handler.Invoker invoker, CacheInvocationContext invocationContext) {
+        return handler.invoke(invoker, invocationContext);
+    }
+
+    protected CacheInvocationContext createInvocationContext(Object target, Method method, Object[] args, Class<?> returnType) {
+        CacheInvocationContext invocationContext = new DefaultCacheInvocationContext(target, method, args, returnType, null);
+
         return invocationContext;
     }
-
 }
