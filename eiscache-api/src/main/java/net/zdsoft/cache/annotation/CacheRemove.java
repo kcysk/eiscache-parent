@@ -22,4 +22,6 @@ public @interface CacheRemove {
      * 是否在方法实际调用之后执行，默认false
      */
     boolean afterInvocation() default false;
+
+    String condition() default "";
 }

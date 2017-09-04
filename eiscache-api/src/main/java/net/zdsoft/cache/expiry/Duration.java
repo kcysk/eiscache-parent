@@ -1,7 +1,5 @@
 package net.zdsoft.cache.expiry;
 
-import net.zdsoft.cache.annotation.Cacheable;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,13 +25,16 @@ public final class Duration {
         this.durationAccount = durationAccount;
     }
 
-    @Cacheable()
     public TimeUnit getTimeUnit() {
         return timeUnit;
     }
 
     public int getDurationAccount() {
         return durationAccount;
+    }
+
+    public long toMillis() {
+        return this.timeUnit.toMillis(durationAccount);
     }
 
     @Override

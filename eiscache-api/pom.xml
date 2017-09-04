@@ -7,7 +7,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>eiscache-core</artifactId>
+    <artifactId>eiscache-api</artifactId>
     <packaging>jar</packaging>
 
     <name>eiscache-core</name>
@@ -19,14 +19,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>net.zdsoft</groupId>
-            <artifactId>eiscache-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-            <version>3.4.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-redis</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
@@ -35,13 +33,18 @@
         </dependency>
         <!--<dependency>-->
             <!--<groupId>org.springframework</groupId>-->
-            <!--<artifactId>spring-expression</artifactId>-->
+            <!--<artifactId>spring-aspects</artifactId>-->
             <!--<version>4.3.8.RELEASE</version>-->
         <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>org.springframework</groupId>-->
-            <!--<artifactId>spring-context</artifactId>-->
-            <!--<version>4.3.8.RELEASE</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.12</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 </project>
