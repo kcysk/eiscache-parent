@@ -6,8 +6,6 @@ package net.zdsoft.cache.core;
  */
 public abstract class CacheOperation {
 
-    private CacheOperationMetaData operationMetaData;
-
     private String cacheName;
     private String key;
     private String condition;

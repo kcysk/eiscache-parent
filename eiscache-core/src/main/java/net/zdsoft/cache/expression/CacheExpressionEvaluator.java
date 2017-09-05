@@ -11,6 +11,9 @@ import org.springframework.expression.ExpressionParser;
  */
 public class CacheExpressionEvaluator {
 
+    public static final Object UN_AVAILABLE = new Object();
+    public static final Object NO_RESULT = new Object();
+
     private ExpressionParser expressionParser;
 
     private DefaultParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();

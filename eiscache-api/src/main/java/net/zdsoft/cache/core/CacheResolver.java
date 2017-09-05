@@ -8,6 +8,6 @@ import net.zdsoft.cache.Cache;
  */
 public interface CacheResolver {
 
-    Cache resolver(CacheInvocationContext cacheInvocationContext);
+    Cache resolver(String cacheName);
 
 }

@@ -1,8 +1,10 @@
 package net.zdsoft.cache;
 
 import net.zdsoft.cache.configuration.CacheConfiguration;
+import org.springframework.cache.CacheManager;
 
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * @author shenke
@@ -10,15 +12,19 @@ import java.util.Set;
  */
 public interface Cache {
 
-    <K, V> V get(K key, Class<V> type);
+    String getName();
 
-    <K, V> void put(K key, V value);
+    Object getNativeCache();
 
-    <K> void remove(K key);
+    Entry get(Object key);
 
-    <K> void removeAll(Set<K> keys);
+    <T> T get(Object key, Class<T> type);
 
-    void removeAll();
+    <T> T get(Object key, Callable<T> valueLoader);
+
+    void put(Object key, Object value);
+
+    Entry putIfAbsent(Object key, Object value);
 
     <C extends CacheConfiguration> C getConfiguration();
 
