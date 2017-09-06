@@ -1,5 +1,7 @@
 package net.zdsoft.cache.listener;
 
+import net.zdsoft.cache.event.CacheEvent;
+
 import java.util.EventListener;
 
 /**
@@ -8,4 +10,5 @@ import java.util.EventListener;
  */
 public interface CacheEventListener extends EventListener {
 
+    void doInvoke(CacheEvent cacheEvent);
 }

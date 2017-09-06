@@ -1,5 +1,6 @@
 package net.zdsoft.cache.aspectj;
 
+import net.zdsoft.cache.Invoker;
 import net.zdsoft.cache.interceptor.CacheAopExecutor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -36,24 +37,28 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     }
 
-    @Around(value = "executionAnyPublicMethodWithCacheable() || executionAnyPublicMethodWithCacheClear()")
+    @Pointcut(value = "execution(public * org.springframework.data.repository.query.RepositoryQuery.execute(..))")
+    public void executionJpaQuery() {
+
+    }
+
+    @Around(value = "executionAnyPublicMethodWithCacheable() || executionAnyPublicMethodWithCacheClear() || executionJpaQuery()")
     public Object executeCacheAround(ProceedingJoinPoint joinPoint){
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
-        //CacheTargetInvoker invoker = () -> {
-        //    try {
-        //        return joinPoint.proceed();
-        //    } catch (Throwable throwable) {
-        //        throw new CacheTargetInvoker.CacheTargetThrowableWrapper(throwable);
-        //    }
-        //};
-        //try {
-        //
-        //    return execute(invoker, joinPoint.getTarget(), method, joinPoint.getArgs(), methodSignature.getReturnType());
-        //} catch (CacheTargetInvoker.CacheTargetThrowableWrapper e) {
-        //    ThrowAny.throwUnchecked(e.getOriginal());
-        //    return null; //never
-        //}
-        return null;
+        Invoker invoker = () -> {
+            try {
+                return joinPoint.proceed();
+            } catch (Throwable throwable) {
+                throw new Invoker.ThrowableWrapper(throwable);
+            }
+        };
+        try {
+
+            return execute(invoker, joinPoint.getTarget(), method, joinPoint.getArgs(), methodSignature.getReturnType());
+        } catch (Invoker.ThrowableWrapper e) {
+            ThrowAny.throwUnchecked(e.getOrigin());
+            return null; //never
+        }
     }
 }

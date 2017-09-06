@@ -1,9 +1,12 @@
 package net.zdsoft.cache.integration.spring;
 
 import net.zdsoft.cache.annotation.EnableCache;
+import org.assertj.core.util.Lists;
 import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.AdviceModeImportSelector;
 import org.springframework.context.annotation.AutoProxyRegistrar;
+
+import java.util.List;
 
 /**
  * @author shenke
@@ -16,7 +19,6 @@ public class CacheConfigurationSelector extends AdviceModeImportSelector<EnableC
         if ( AdviceMode.PROXY.equals(adviceMode) ){
             return getProxyImport();
         }
-
         return getAspectJImport();
     }
 
@@ -25,9 +27,10 @@ public class CacheConfigurationSelector extends AdviceModeImportSelector<EnableC
     }
 
     private String[] getProxyImport() {
-        //result.add(AutoProxyRegistrar.class.getName());
-        //result.add(ProxyCachingConfiguration.class.getName());
-        return new String[]{AutoProxyRegistrar.class.getName(), ""};
+        List<String> result = Lists.newArrayList();
+        result.add(AutoProxyRegistrar.class.getName());
+        result.add("net.zdsoft.cache.proxy.CacheProxyConfiguration");
+        return result.toArray(new String[result.size()]);
     }
 
 }

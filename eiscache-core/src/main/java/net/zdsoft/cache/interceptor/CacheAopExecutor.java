@@ -1,13 +1,14 @@
 package net.zdsoft.cache.interceptor;
 
 import net.zdsoft.cache.Cache;
-import net.zdsoft.cache.Handler;
+import net.zdsoft.cache.Invoker;
 import net.zdsoft.cache.core.CacheResolver;
 import net.zdsoft.cache.core.InvocationContext;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.core.support.CacheRemoveOperation;
 import net.zdsoft.cache.expression.CacheEvaluationContext;
 import net.zdsoft.cache.expression.CacheExpressionEvaluator;
+import net.zdsoft.cache.listener.CacheEventListener;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -25,13 +26,14 @@ import java.util.Map;
  * @author shenke
  * @since 2017.09.04
  */
-public abstract class CacheAopExecutor implements BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+public abstract class CacheAopExecutor extends AbstractCacheInvoker implements BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
 
     private BeanFactory beanFactory ;
     private CacheExpressionEvaluator evaluator = new CacheExpressionEvaluator(new SpelExpressionParser());
     private CacheOperationParser cacheOperationParser;
     private CacheResolver cacheResolver;
-
+    private CacheErrorHanlder cacheErrorHanlder;
+    private Collection<CacheEventListener> listeners;
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -51,10 +53,9 @@ public abstract class CacheAopExecutor implements BeanFactoryAware, Initializing
 
     }
 
-    public Object execute(Handler.Invoker invoker, Object target, Method method, Object[] args, Class<?> returnType) {
+    public Object execute(Invoker invoker, Object target, Method method, Object[] args, Class<?> returnType) {
 
         try {
-            InvocationContext invocationContext = createInvocationContext(target, method, args, returnType);
 
             return invoker.invoke();
         } catch (Throwable throwable) {
@@ -71,11 +72,19 @@ public abstract class CacheAopExecutor implements BeanFactoryAware, Initializing
 
     protected void processCacheRemove(CacheInvocationContext invocationContext, boolean beforeInvocation) {
         CacheRemoveOperation cacheRemoveOperation = (CacheRemoveOperation) invocationContext.getCacheOperation();
-        //if ( !cacheRemoveOperation.isAfterInvocation() && invocationContext.isCondition() ) {
-        //    invocationContext.getCache().remove(invocationContext.generateKey());
-        //}
+        Cache cache = invocationContext.getCache(cacheRemoveOperation.getCacheName());
+        doRemove(cache, invocationContext.generateKey(CacheExpressionEvaluator.NO_RESULT));
     }
 
+    @Override
+    protected CacheErrorHanlder getCacheErrorHandler() {
+        return null;
+    }
+
+    @Override
+    protected Collection<CacheEventListener> getCacheEventListener() {
+        return null;
+    }
 
     class CacheInvocationContext implements InvocationContext {
         private Object target;
@@ -136,7 +145,7 @@ public abstract class CacheAopExecutor implements BeanFactoryAware, Initializing
             return null;
         }
 
-        public Object evaluate(String springELExpression, Object result) {
+        public Object evaluate(String expression, Object result) {
 
             CacheEvaluationContext context = new CacheEvaluationContext(this, getMethod(), getArgs(), evaluator.getParameterNameDiscoverer());
             if ( result == CacheExpressionEvaluator.UN_AVAILABLE ) {
@@ -146,7 +155,7 @@ public abstract class CacheAopExecutor implements BeanFactoryAware, Initializing
                 context.setVariable("result", result);
             }
             context.setBeanResolver(new BeanFactoryResolver(beanFactory));
-            return evaluator.getValue(springELExpression, context);
+            return evaluator.getValue(expression, context);
         }
 
         public CacheOperation getCacheOperation(Class<? extends CacheOperation> cType) {

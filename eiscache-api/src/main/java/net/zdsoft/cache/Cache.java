@@ -28,6 +28,8 @@ public interface Cache {
 
     <C extends CacheConfiguration> C getConfiguration();
 
+    void remove(Object key);
+
     interface Entry {
 
         String getKey();

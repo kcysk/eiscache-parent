@@ -8,15 +8,19 @@ import java.util.EventObject;
  * @author shenke
  * @since 2017.09.04
  */
-public abstract class CacheEvent extends EventObject {
+public class CacheEvent extends EventObject {
 
     private Cache cache;
     private EventType eventType;
 
-    public CacheEvent(EventType source, Cache cache) {
+    private Object key;
+    private Object value;
+    private long duration;
+
+    public CacheEvent(Cache source, EventType eventType) {
         super(source);
-        this.eventType = source;
-        this.cache = cache;
+        this.cache = source;
+        this.eventType = eventType;
     }
 
     @Override
@@ -24,11 +28,34 @@ public abstract class CacheEvent extends EventObject {
         return (Cache) super.getSource();
     }
 
-    public abstract <V> V getOldValue();
-
-    public abstract <K> K getKey();
-
     public final EventType getEventType() {
         return eventType;
+    }
+
+    public Object getKey() {
+        return key;
+    }
+
+    public CacheEvent setKey(Object key) {
+        this.key = key;
+        return this;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public CacheEvent setValue(Object value) {
+        this.value = value;
+        return this;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+
+    public CacheEvent setDuration(long duration) {
+        this.duration = duration;
+        return this;
     }
 }
