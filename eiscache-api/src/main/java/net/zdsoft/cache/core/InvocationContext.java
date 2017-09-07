@@ -21,7 +21,7 @@ public interface InvocationContext<O extends CacheOperation>  {
 
     O getCacheOperation();
 
-    Cache getCache(String cacheName);
+    Cache getCache();
 
     /**
      * 通过计算springEL表达式

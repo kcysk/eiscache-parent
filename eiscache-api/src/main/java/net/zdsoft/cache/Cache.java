@@ -16,7 +16,7 @@ public interface Cache {
 
     Object getNativeCache();
 
-    Entry get(Object key);
+    Object get(Object key);
 
     <T> T get(Object key, Class<T> type);
 
@@ -24,18 +24,13 @@ public interface Cache {
 
     void put(Object key, Object value);
 
-    Entry putIfAbsent(Object key, Object value);
+    Object putIfAbsent(Object key, Object value, Class<?> type);
 
     <C extends CacheConfiguration> C getConfiguration();
 
     void remove(Object key);
 
-    interface Entry {
+    void remove(Object... keys);
 
-        String getKey();
-
-        String getValue();
-
-        long getCreateTime();
-    }
+    void destroy();
 }

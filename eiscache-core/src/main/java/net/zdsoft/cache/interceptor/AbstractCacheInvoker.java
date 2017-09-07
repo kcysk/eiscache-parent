@@ -39,10 +39,19 @@ public abstract class AbstractCacheInvoker {
     protected void doRemove(final Cache cache, final Object key) {
         try {
             CacheEvent cacheEvent = new CacheEvent(cache, EventType.REMOVE);
+            cacheEvent.setKey(key);
             notifyListener(cacheEvent);
             cache.remove(key);  //FIXME 可改为异步处理
         } catch (RuntimeException e){
             getCacheErrorHandler().doRemoveError(e, cache, key);
+        }
+    }
+
+    protected void doRemove(final Cache cache, Object ... keys) {
+        try {
+            cache.remove(keys);
+        } catch (RuntimeException e) {
+
         }
     }
 

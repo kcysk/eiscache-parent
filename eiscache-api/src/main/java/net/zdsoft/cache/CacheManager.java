@@ -8,7 +8,7 @@ import net.zdsoft.cache.configuration.CacheConfiguration;
  */
 public interface CacheManager {
 
-    <C extends CacheConfiguration> Cache createCache(String name, C configuration);
+    //<C extends CacheConfiguration> Cache createCache(String name, C configuration);
 
     Cache getCache(String cacheName);
 

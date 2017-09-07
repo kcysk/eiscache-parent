@@ -40,6 +40,9 @@ public class CacheProxyConfiguration {
                         Class<?> realTargetClass = targetClass.getSuperclass();
                         return isTarget(realTargetClass, method);
                     } else {
+                        if ( targetClass.isInterface() ) {
+
+                        }
                         return isTarget(targetClass, method);
                     }
                 }
