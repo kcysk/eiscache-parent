@@ -6,9 +6,12 @@ import net.zdsoft.cache.annotation.CacheRemove;
 import net.zdsoft.cache.annotation.Cacheable;
 import net.zdsoft.cache.core.support.CacheRemoveOperation;
 import net.zdsoft.cache.core.support.CacheableOperation;
+import org.springframework.core.BridgeMethodResolver;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -22,8 +25,22 @@ final public class CacheOperationParser {
     private static final Collection<CacheOperation> EMPTY = Collections.emptyList();
 
     public Collection<CacheOperation> parser(Method method) {
-        //TODO proxy
-        Class<?> targetClass =  method.getDeclaringClass();
+        return parser(method, null);
+    }
+
+    public Collection<CacheOperation> parser(Method method, Class<?> targetClass) {
+
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return null;
+        }
+        if ( targetClass != null ) {
+            //get real method
+            Method specificMethod = ClassUtils.getMostSpecificMethod(method, targetClass);
+            method = BridgeMethodResolver.findBridgedMethod(specificMethod);
+        } else {
+            targetClass = method.getDeclaringClass();
+        }
+
         MethodClassKey key = new MethodClassKey(method, targetClass);
         Collection<CacheOperation> cacheOperations = cached.get(key);
         if ( cacheOperations == EMPTY) {

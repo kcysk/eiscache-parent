@@ -8,9 +8,12 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author shenke
@@ -66,7 +69,7 @@ public class RedisCache implements Cache{
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                byte[] keyBytes = convertToByteIfNecessary(key, redisTemplate.getKeySerializer());
+                byte[] keyBytes = getKey(key);
 
                 connection.del(keyBytes);
                 connection.zRem(keyBytes);
@@ -85,12 +88,27 @@ public class RedisCache implements Cache{
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                byte[] keyBytes = convertToByteIfNecessary(key, redisTemplate.getKeySerializer());
+                byte[] keyBytes = getKey(key);
                 connection.set(keyBytes, redisTemplate.getValueSerializer().serialize(value));
                 connection.zAdd(keySetName, 0 , keyBytes);
                 return null;
             }
         });
+    }
+
+    @Override
+    public void put(Object key, Object value, long seconds) {
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public void put(Object key, Object value, int account, TimeUnit timeUnit) {
+
     }
 
     @Override
@@ -107,6 +125,22 @@ public class RedisCache implements Cache{
     @Override
     public <C extends CacheConfiguration> C getConfiguration() {
         return (C) this.cacheConfiguration;
+    }
+
+    @Override
+    public void remove(Object... keys) {
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                Collection<byte[]> keyCollections = Collections.EMPTY_SET;
+                for (Object key : keys) {
+                    keyCollections.add(getKey(key));
+                }
+                connection.del(keyCollections.toArray(new byte[keyCollections.size()][]));
+                connection.zRem(keySetName, keyCollections.toArray(new byte[keyCollections.size()][]));
+                return null;
+            }
+        });
     }
 
     @Override

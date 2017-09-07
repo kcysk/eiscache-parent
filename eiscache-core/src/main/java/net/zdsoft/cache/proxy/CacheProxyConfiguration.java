@@ -8,6 +8,7 @@ import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -41,7 +42,12 @@ public class CacheProxyConfiguration {
                         return isTarget(realTargetClass, method);
                     } else {
                         if ( targetClass.isInterface() ) {
-
+                            for (Method m : targetClass.getDeclaredMethods()) {
+                                Collection<CacheOperation> cacheOperations = cacheOperationParser.parser(method);
+                                if ( cacheOperations != null && !cacheOperations.isEmpty()) {
+                                    return true;
+                                }
+                            }
                         }
                         return isTarget(targetClass, method);
                     }
@@ -79,7 +85,9 @@ public class CacheProxyConfiguration {
                 return pointcut;
             }
         };
-        advisor.setAdvice(cacheInterceptor());
+        CacheInterceptor interceptor = cacheInterceptor();
+        interceptor.setActiveModel(AdviceMode.PROXY);
+        advisor.setAdvice(interceptor);
         return advisor;
     }
 

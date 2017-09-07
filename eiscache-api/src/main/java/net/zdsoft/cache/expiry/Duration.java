@@ -33,8 +33,8 @@ public final class Duration {
         return durationAccount;
     }
 
-    public long toMillis() {
-        return this.timeUnit.toMillis(durationAccount);
+    public long toSeconds() {
+        return this.timeUnit.toSeconds(durationAccount);
     }
 
     @Override

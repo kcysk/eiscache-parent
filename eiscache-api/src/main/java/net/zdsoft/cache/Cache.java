@@ -5,6 +5,7 @@ import org.springframework.cache.CacheManager;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author shenke
@@ -23,6 +24,10 @@ public interface Cache {
     <T> T get(Object key, Callable<T> valueLoader);
 
     void put(Object key, Object value);
+
+    void put(Object key, Object value, long seconds);
+
+    void put(Object key, Object value, int account, TimeUnit timeUnit);
 
     Object putIfAbsent(Object key, Object value, Class<?> type);
 

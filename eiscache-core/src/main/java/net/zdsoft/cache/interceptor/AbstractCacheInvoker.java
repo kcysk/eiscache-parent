@@ -31,6 +31,7 @@ public abstract class AbstractCacheInvoker {
         try {
             return cache.get(key, returnType);
         } catch (RuntimeException e){
+            e.printStackTrace();
             getCacheErrorHandler().doGetError(e, cache, key);
         }
         return null;

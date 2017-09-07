@@ -11,6 +11,7 @@ import net.zdsoft.cache.core.support.CacheableOperation;
 import net.zdsoft.cache.expression.CacheEvaluationContext;
 import net.zdsoft.cache.expression.CacheExpressionEvaluator;
 import net.zdsoft.cache.listener.CacheEventListener;
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -42,6 +44,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     private CacheManager cacheManager;
     private boolean initialized = false;
     private ApplicationContext applicationContext;
+    private AdviceMode activeModel;
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -77,13 +80,23 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         this.initialized = true;
     }
 
+    private Class<?> getTargetClass(Object target) {
+        //有可能是代理类
+        Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
+        if (targetClass == null && target != null) {
+            targetClass = target.getClass();
+        }
+        return targetClass;
+    }
+
     public Object execute(Invoker invoker, Object target, Method method, Object[] args, Class<?> returnType) {
 
         try {
             if ( !this.initialized ) {
                 return invoker.invoke();
             }
-            Collection<CacheOperation> operations = this.cacheOperationParser.parser(method);
+            Class<?> targetClass =  getTargetClass(target);
+            Collection<CacheOperation> operations = this.cacheOperationParser.parser(method, AdviceMode.ASPECTJ.equals(activeModel) ? targetClass : null);
             if ( !operations.isEmpty() ) {
                 CacheInvocationContexts contexts = new CacheInvocationContexts(operations, target, method, args, returnType);
 
@@ -154,6 +167,10 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     @Override
     protected Collection<CacheEventListener> getCacheEventListener() {
         return this.listeners;
+    }
+
+    public void setActiveModel(AdviceMode activeModel) {
+        this.activeModel = activeModel;
     }
 
     private Cache getCache(String cacheName) {

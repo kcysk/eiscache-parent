@@ -11,7 +11,7 @@ public interface ExpiryPolicy {
         if ( duration == Duration.NEVER ) {
             return false;
         }
-        return System.currentTimeMillis() - creation > duration.toMillis();
+        return System.currentTimeMillis() - creation > duration.toSeconds();
     }
 
     Duration getAccessExpire();

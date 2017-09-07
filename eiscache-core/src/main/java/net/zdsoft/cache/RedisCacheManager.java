@@ -1,5 +1,11 @@
 package net.zdsoft.cache;
 
+import net.zdsoft.cache.configuration.CacheConfiguration;
+import net.zdsoft.cache.configuration.ValueTransfer;
+import net.zdsoft.cache.expiry.Duration;
+import net.zdsoft.cache.expiry.ExpiryPolicy;
+import net.zdsoft.cache.expiry.TTLExpiryPolicy;
+import net.zdsoft.cache.listener.CacheEventListener;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Map;
@@ -29,7 +35,36 @@ public class RedisCacheManager extends AbstractCacheManager {
 
     private Cache createAndAdd(String cacheName) {
         RedisCache cache = new RedisCache(redisTemplate, cacheName, cacheName, PREFIX_REDIS);
+        cache.setCacheConfiguration(getDefaultConfiguration());
         addCache(cache);
         return cache;
+    }
+
+    private CacheConfiguration<String> getDefaultConfiguration() {
+
+        return new Configuration();
+    }
+
+    class Configuration implements CacheConfiguration<String> {
+        ExpiryPolicy expiry = new TTLExpiryPolicy(Duration.NEVER);
+        @Override
+        public <L extends CacheEventListener> L getListener(Class<L> listenerClass) {
+            return null;
+        }
+
+        @Override
+        public <E extends ExpiryPolicy> E getExpiry() {
+            return (E) expiry;
+        }
+
+        @Override
+        public <S, T> ValueTransfer<S, T> getValueTransfer() {
+            return null;
+        }
+
+        @Override
+        public Class<String> getKeyType() {
+            return String.class;
+        }
     }
 }
