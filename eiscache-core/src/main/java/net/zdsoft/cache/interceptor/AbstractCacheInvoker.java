@@ -7,6 +7,7 @@ import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.listener.CacheRemoveListener;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author shenke
@@ -22,6 +23,14 @@ public abstract class AbstractCacheInvoker {
         try {
             //CacheEvent cachePutEvent = new CacheableEvent(EventType.CREATE, );
             cache.put(key, value);
+        } catch (RuntimeException e) {
+            getCacheErrorHandler().doPutError(e, cache, key, value);
+        }
+    }
+
+    protected void doPut(Cache cache, Object key, Object value, int account, TimeUnit timeUnit) {
+        try {
+            cache.put(key, value, account, timeUnit);
         } catch (RuntimeException e) {
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }

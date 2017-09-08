@@ -101,6 +101,9 @@ public class RedisCache implements Cache{
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                byte[] keyBytes = getKey(key);
+                connection.setEx(keyBytes, seconds, redisTemplate.getValueSerializer().serialize(value));
+                connection.zAdd(keySetName, 0 , keyBytes);
                 return null;
             }
         });
@@ -108,7 +111,19 @@ public class RedisCache implements Cache{
 
     @Override
     public void put(Object key, Object value, int account, TimeUnit timeUnit) {
-
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                byte[] keyBytes = getKey(key);
+                if ( TimeUnit.MICROSECONDS.equals(timeUnit) ) {
+                    connection.pSetEx(keyBytes, timeUnit.toMillis(account), redisTemplate.getValueSerializer().serialize(value));
+                } else {
+                  connection.setEx(keyBytes, timeUnit.toSeconds(account), redisTemplate.getValueSerializer().serialize(value));
+                }
+                connection.zAdd(keySetName, 0 , keyBytes);
+                return null;
+            }
+        });
     }
 
     @Override

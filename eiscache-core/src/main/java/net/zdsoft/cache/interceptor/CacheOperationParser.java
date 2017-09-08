@@ -43,8 +43,8 @@ final public class CacheOperationParser {
 
         MethodClassKey key = new MethodClassKey(method, targetClass);
         Collection<CacheOperation> cacheOperations = cached.get(key);
-        if ( cacheOperations == EMPTY) {
-            return EMPTY;
+        if ( cacheOperations != null && cacheOperations.size() > 0) {
+            return cacheOperations;
         }
 
         //解析
