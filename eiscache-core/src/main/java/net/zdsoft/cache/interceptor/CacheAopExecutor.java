@@ -100,7 +100,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             if ( !operations.isEmpty() ) {
                 CacheInvocationContexts contexts = new CacheInvocationContexts(operations, target, method, args, returnType);
 
-                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, CacheExpressionEvaluator.NO_RESULT);
+                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), false, CacheExpressionEvaluator.NO_RESULT);
 
                 Object result = getFromCache(contexts.getInvocationContext(CacheableOperation.class));
 
@@ -109,7 +109,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                     processCachePut(contexts.getInvocationContext(CacheableOperation.class), result);
                 }
 
-                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), false, result);
+                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, result);
                 return result;
             }
             return invoker.invoke();
@@ -145,16 +145,21 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     protected void processCachePut(CacheInvocationContext invocationContext, Object result) {
         if ( invocationContext != null ) {
             Object key = invocationContext.generateKey(result);
+            if ( !invocationContext.isCondition(result) ) {
+                return ;
+            }
+            CacheableOperation operation = (CacheableOperation) invocationContext.getCacheOperation();
+
             if ( key.getClass().isArray() ) {
                 for (Object o : (Object[]) key) {
-                    doPut(invocationContext.getCache(), o, result);
+                    doPut(invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
                 }
             } else if ( key instanceof Collection) {
                 for (Object o : (Collection) key) {
-                    doPut(invocationContext.getCache(), o, result);
+                    doPut(invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
                 }
             } else {
-                doPut(invocationContext.getCache(), key, result);
+                doPut(invocationContext.getCache(), key, result, operation.getExpire(), operation.getTimeUnit());
             }
         }
     }

@@ -111,6 +111,11 @@ public class RedisCache implements Cache{
 
     @Override
     public void put(Object key, Object value, int account, TimeUnit timeUnit) {
+        if ( account == 0 ) {
+            //never expire
+            put(key, value);
+            return ;
+        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {

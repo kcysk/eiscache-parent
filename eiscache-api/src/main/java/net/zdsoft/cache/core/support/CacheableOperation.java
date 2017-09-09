@@ -24,6 +24,22 @@ public class CacheableOperation extends CacheOperation {
         this.unless = builder.unless;
     }
 
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    public int getExpire() {
+        return expire;
+    }
+
+    public TimeToLive getTimeToLive() {
+        return timeToLive;
+    }
+
+    public String getUnless() {
+        return unless;
+    }
+
     public static class Builder extends CacheOperation.Builder {
         private TimeUnit timeUnit;
         private int expire;
