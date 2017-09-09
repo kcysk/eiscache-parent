@@ -59,7 +59,7 @@ public class CacheProxyConfiguration {
                             Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
                             for (Method method1 : clazz.getDeclaredMethods()) {
                                 if ( method1.getName().equals(method.getName()) ) {
-                                    Collection<CacheOperation> operations = cacheOperationParser.parser(method);
+                                    Collection<CacheOperation> operations = cacheOperationParser.parser(method1);
                                     if ( operations != null && !operations.isEmpty() ) {
                                         return true;
                                     }
@@ -68,7 +68,7 @@ public class CacheProxyConfiguration {
                         }else {
                             for (Method imethod : ((Class<?>) type).getDeclaredMethods()) {
                                 if (imethod.getName().equals(method.getName())) {
-                                    Collection<CacheOperation> operations = cacheOperationParser.parser(method);
+                                    Collection<CacheOperation> operations = cacheOperationParser.parser(imethod);
                                     if ( operations != null && !operations.isEmpty() ) {
                                         return true;
                                     }
