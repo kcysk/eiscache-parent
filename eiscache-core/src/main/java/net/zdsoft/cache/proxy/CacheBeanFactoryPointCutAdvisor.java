@@ -27,6 +27,7 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
             boolean isCacheInterceptor = false;
             //接口
             if ( targetClass.isInterface() ) {
+                System.out.println(targetClass.getName() + "---------------------");
                 isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
             }
 
@@ -40,42 +41,48 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
                 isCacheInterceptor = isCacheInterceptor || isTarget(realTargetClass, method);
 
             }
+
+            Collection<CacheOperation> operations = cacheOperationParser.parser(method);
+            isCacheInterceptor = isCacheInterceptor || isTarget(targetClass, method);
             return isCacheInterceptor;
+        }
+
+        private boolean isTarget(Class<?> targetClass, Method method) {
+            boolean isCacheInterceptor = false;
+            //处理实际类型
+            isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
+            System.out.println(targetClass.getName() + "--------------------" + isCacheInterceptor);
+            //处理接口
+            for (Type type : targetClass.getGenericInterfaces()) {
+                if ( type instanceof ParameterizedType) {
+                    Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
+                    if ( containCacheOperation(clazz.getDeclaredMethods(), method) ) {
+                        return true;
+                    }
+                }else {
+                    if ( containCacheOperation(((Class<?>) type).getDeclaredMethods(), method) ) {
+                        return true;
+                    }
+                }
+            }
+            return isCacheInterceptor;
+        }
+
+        private boolean containCacheOperation(Method[] searchMethods, Method method) {
+            for (Method tMethod : searchMethods ) {
+                if ( !tMethod.getName().equals(method.getName()) ) {
+                    continue;
+                }
+                Collection<CacheOperation> cacheOperations = cacheOperationParser.parser(tMethod);
+                if ( cacheOperations != null && !cacheOperations.isEmpty() ) {
+                    return true;
+                }
+            }
+            return false;
         }
     };
 
-    private boolean isTarget(Class<?> targetClass, Method method) {
-        boolean isCacheInterceptor = false;
-        //处理实际类型
-        isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
-        //处理接口
-        for (Type type : targetClass.getGenericInterfaces()) {
-            if ( type instanceof ParameterizedType) {
-                Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
-                if ( containCacheOperation(clazz.getDeclaredMethods(), method) ) {
-                    return true;
-                }
-            }else {
-                if ( containCacheOperation(((Class<?>) type).getDeclaredMethods(), method) ) {
-                    return true;
-                }
-            }
-        }
-        return isCacheInterceptor;
-    }
 
-    private boolean containCacheOperation(Method[] searchMethods, Method method) {
-        for (Method tMethod : searchMethods ) {
-            if ( !tMethod.getName().equals(method.getName()) ) {
-                continue;
-            }
-            Collection<CacheOperation> cacheOperations = cacheOperationParser.parser(tMethod);
-            if ( cacheOperations != null && !cacheOperations.isEmpty() ) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
     public Pointcut getPointcut() {

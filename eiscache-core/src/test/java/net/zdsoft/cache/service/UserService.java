@@ -1,5 +1,6 @@
 package net.zdsoft.cache.service;
 
+import net.zdsoft.cache.annotation.Cacheable;
 import net.zdsoft.cache.entity.User;
 
 /**

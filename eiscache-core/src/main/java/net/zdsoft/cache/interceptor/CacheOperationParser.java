@@ -10,8 +10,11 @@ import org.springframework.core.BridgeMethodResolver;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -47,20 +50,59 @@ final public class CacheOperationParser {
             return cacheOperations;
         }
 
+
+        List<CacheDefault> cacheDefaults = new ArrayList<>(10);
+        List<Cacheable> cacheables = new ArrayList<>(10);
+        List<CacheRemove> cacheRemoves = new ArrayList<>(10);
         //解析
+        if ( !targetClass.isInterface() ) {
+            Type[] interfaces = targetClass.getGenericInterfaces();
+            for (Type type : interfaces) {
+                if ( type instanceof ParameterizedType) {
+                    Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
+                    parseAnnotation(clazz, cacheDefaults, cacheables, cacheRemoves, method);
+                }else {
+                    parseAnnotation((Class<?>)type, cacheDefaults, cacheables, cacheRemoves, method);
+                }
+            }
+
+        }
         CacheDefault cacheDefault = targetClass.getAnnotation(CacheDefault.class);
+        cacheDefault = cacheDefault == null && !cacheDefaults.isEmpty() ? cacheDefaults.get(0) : cacheDefault;
 
         cacheOperations = new ArrayList<>();
         Cacheable cacheable = method.getAnnotation(Cacheable.class);
+        cacheable = cacheable == null && !cacheables.isEmpty() ? cacheables.get(0) : cacheable;
         if ( cacheable != null ){
             cacheOperations.add(parseCacheable(cacheable, cacheDefault));
         }
         CacheRemove cacheRemove = method.getAnnotation(CacheRemove.class);
+        cacheRemove = cacheRemove == null && !cacheRemoves.isEmpty() ? cacheRemoves.get(0) : cacheRemove;
         if ( cacheRemove != null ) {
             cacheOperations.add(parseCacheRemove(cacheRemove, cacheDefault));
         }
         cached.put(key, cacheOperations);
         return cacheOperations;
+    }
+
+    private void parseAnnotation(Class<?> objClass, Collection<CacheDefault> cacheDefaults,
+                                 Collection<Cacheable> cacheables,
+                                 Collection<CacheRemove> cacheRemoves, Method originMethod) {
+        CacheDefault cacheDefault = objClass.getAnnotation(CacheDefault.class);
+        if ( cacheDefault != null ) {
+            cacheDefaults.add(cacheDefault);
+        }
+        for (Method im : objClass.getDeclaredMethods()) {
+            if ( !im.getName().equals(originMethod.getName()) ) {
+                continue;
+            }
+            if ( im.getAnnotation(Cacheable.class) != null ) {
+                cacheables.add(im.getAnnotation(Cacheable.class));
+            }
+            if ( im.getAnnotation(CacheRemove.class) != null ) {
+                cacheRemoves.add(im.getAnnotation(CacheRemove.class));
+            }
+        }
     }
 
     private CacheOperation parseCacheable(Cacheable cacheable, CacheDefault cacheDefault) {
