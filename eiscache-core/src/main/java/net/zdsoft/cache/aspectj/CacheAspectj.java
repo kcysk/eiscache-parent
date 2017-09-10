@@ -16,7 +16,7 @@ import java.lang.reflect.Method;
  * @author shenke
  * @since 2017.08.30
  */
-@Aspect
+//@Aspect
 class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     public CacheAspectj() {
@@ -37,12 +37,8 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     }
 
-    @Pointcut(value = "execution(public * org.springframework.data.repository.query.RepositoryQuery.execute(..))")
-    public void executionJpaQuery() {
 
-    }
-
-    @Around(value = "executionAnyPublicMethodWithCacheable() || executionAnyPublicMethodWithCacheClear() || executionJpaQuery()")
+    @Around(value = "executionAnyPublicMethodWithCacheable() || executionAnyPublicMethodWithCacheClear() || executeJPAQuery()")
     public Object executeCacheAround(ProceedingJoinPoint joinPoint){
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
@@ -61,4 +57,13 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
             return null; //never
         }
     }
+
+
+    //jpa dao pointcut
+
+    @Pointcut(value = "execution(@net.zdsoft.cache.annotation.Cacheable public * org.springframework.data.repository.Repository+.*(..)))")
+    public void executeJPAQuery() {
+
+    }
+
 }

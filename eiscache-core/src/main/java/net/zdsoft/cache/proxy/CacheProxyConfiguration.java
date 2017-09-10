@@ -22,69 +22,14 @@ import java.util.Collection;
  * @author shenke
  * @since 2017.09.06
  */
-@Configuration
 public class CacheProxyConfiguration {
 
     @Bean(name = "org.zdsoft.cache.proxy.internalCacheAdvisor")
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public AbstractBeanFactoryPointcutAdvisor cacheAdvisor() {
         CacheOperationParser cacheOperationParser = cacheOperationParser();
-        AbstractBeanFactoryPointcutAdvisor advisor = new AbstractBeanFactoryPointcutAdvisor() {
-
-            private Pointcut pointcut = new StaticMethodMatcherPointcut() {
-                @Override
-                public boolean matches(Method method, Class<?> targetClass) {
-                    Type[] types = targetClass.getGenericInterfaces();
-                    if ( AopUtils.isJdkDynamicProxy(targetClass)
-                            || AopUtils.isAopProxy(targetClass)
-                            || AopUtils.isCglibProxy(targetClass) ){
-                        Class<?> realTargetClass = targetClass.getSuperclass();
-                        return isTarget(realTargetClass, method);
-                    } else {
-                        if ( targetClass.isInterface() ) {
-                            for (Method m : targetClass.getDeclaredMethods()) {
-                                Collection<CacheOperation> cacheOperations = cacheOperationParser.parser(method);
-                                if ( cacheOperations != null && !cacheOperations.isEmpty()) {
-                                    return true;
-                                }
-                            }
-                        }
-                        return isTarget(targetClass, method);
-                    }
-                }
-
-                private boolean isTarget(Class<?> targetClass, Method method) {
-                    for (Type type : targetClass.getGenericInterfaces()) {
-                        if ( type instanceof ParameterizedType ) {
-                            Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
-                            for (Method method1 : clazz.getDeclaredMethods()) {
-                                if ( method1.getName().equals(method.getName()) ) {
-                                    Collection<CacheOperation> operations = cacheOperationParser.parser(method1);
-                                    if ( operations != null && !operations.isEmpty() ) {
-                                        return true;
-                                    }
-                                }
-                            }
-                        }else {
-                            for (Method imethod : ((Class<?>) type).getDeclaredMethods()) {
-                                if (imethod.getName().equals(method.getName())) {
-                                    Collection<CacheOperation> operations = cacheOperationParser.parser(imethod);
-                                    if ( operations != null && !operations.isEmpty() ) {
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return false;
-                }
-            };
-
-            @Override
-            public Pointcut getPointcut() {
-                return pointcut;
-            }
-        };
+        AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
+        ((CacheBeanFactoryPointCutAdvisor)advisor).setCacheOperationParser(cacheOperationParser);
         CacheInterceptor interceptor = cacheInterceptor();
         interceptor.setActiveModel(AdviceMode.PROXY);
         advisor.setAdvice(interceptor);

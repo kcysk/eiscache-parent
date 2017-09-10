@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Role;
  * @author shenke
  * @since 2017.08.30
  */
-@Configuration
+//@Configuration
 public class AspectjCacheConfiguration {
 
     @Bean(name = "net.zdsoft.cache.aspect.exCacheAspectj")
