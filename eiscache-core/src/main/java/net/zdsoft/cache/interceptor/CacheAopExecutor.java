@@ -69,7 +69,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         try {
             this.cacheManager = beanFactory.getBean(CacheManager.class);
         } catch (Exception e) {
-            //throw new RuntimeException("no cacheManager");
+            throw new RuntimeException("no cacheManager");
         }
         try {
             this.cacheErrorHanlder = beanFactory.getBean(CacheErrorHanlder.class);
