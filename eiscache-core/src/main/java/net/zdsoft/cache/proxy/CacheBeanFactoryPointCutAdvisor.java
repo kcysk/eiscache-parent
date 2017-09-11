@@ -27,7 +27,6 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
             boolean isCacheInterceptor = false;
             //接口
             if ( targetClass.isInterface() ) {
-                System.out.println(targetClass.getName() + "---------------------");
                 isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
             }
 
@@ -51,7 +50,6 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
             boolean isCacheInterceptor = false;
             //处理实际类型
             isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
-            System.out.println(targetClass.getName() + "--------------------" + isCacheInterceptor);
             //处理接口
             for (Type type : targetClass.getGenericInterfaces()) {
                 if ( type instanceof ParameterizedType) {
