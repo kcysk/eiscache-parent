@@ -19,6 +19,8 @@ public interface InvocationContext<O extends CacheOperation>  {
 
     Class<?> getReturnType();
 
+    Class<?> getTargetClass();
+
     O getCacheOperation();
 
     Cache getCache();
@@ -38,4 +40,6 @@ public interface InvocationContext<O extends CacheOperation>  {
     Object generateKey(Object result);
 
     Object entityId(Object result);
+
+    String cacheName();
 }

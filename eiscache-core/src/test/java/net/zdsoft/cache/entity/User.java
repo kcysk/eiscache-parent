@@ -2,27 +2,21 @@ package net.zdsoft.cache.entity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 
 /**
  * @author shenke
  * @since 17-9-10下午12:56
  */
 @Entity(name = "base_user")
-public class User {
+public class User extends BaseEntity<String> {
 
-    @Id
-    private String id;
     @Column(name = "user_name")
     private String userName;
     private String password;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    @Override
+    public String getCacheEntityName() {
+        return "user";
     }
 
     public String getUserName() {

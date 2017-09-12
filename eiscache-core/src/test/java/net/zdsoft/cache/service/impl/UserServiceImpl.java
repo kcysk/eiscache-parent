@@ -1,5 +1,6 @@
 package net.zdsoft.cache.service.impl;
 
+import net.zdsoft.cache.dao.BaseJpaDao;
 import net.zdsoft.cache.dao.UserDao;
 import net.zdsoft.cache.entity.User;
 import net.zdsoft.cache.service.UserService;
@@ -12,10 +13,15 @@ import javax.annotation.Resource;
  * @since 17-9-10下午1:03
  */
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends BaseServiceImpl<User, String> implements UserService {
 
     @Resource
     private UserDao userDao;
+
+    @Override
+    protected BaseJpaDao<User, String> getBaseJpaDao() {
+        return userDao;
+    }
 
     @Override
     public User findById(String id) {

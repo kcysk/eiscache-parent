@@ -32,7 +32,7 @@ public class JpaTest {
 
     @Test
     public void testFind() {
-        User user = userService.findUser("31b9e149-7af8-4d53-803d-5128f8e0");
+        User user = userService.findOne("31b9e149-7af8-4d53-803d-5128f8e0");
         System.out.printf(user.getUserName());
     }
 }

@@ -233,8 +233,8 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             this.args = args;
             this.returnType = returnType;
             this.cacheOperation = cacheOperation;
-            this.cache = CacheAopExecutor.this.getCache(getCacheOperation().getCacheName());
             this.targetClass = CacheAopExecutor.this.getTargetClass(target);
+            this.cache = CacheAopExecutor.this.getCache(cacheName());
         }
 
         @Override
@@ -262,6 +262,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return this.cache;
         }
 
+        @Override
         public Class<?> getTargetClass() {
             return targetClass;
         }
@@ -298,6 +299,12 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
         }
 
+        @Override
+        public String cacheName() {
+            EvaluationContext context = buildContext(null);
+            return evaluator.getValue(getCacheOperation().getCacheName(), context, String.class);
+        }
+
         protected EvaluationContext buildContext(Object result) {
             CacheEvaluationContext context = new CacheEvaluationContext(this, getMethod(), getArgs(), evaluator.getParameterNameDiscoverer());
             if ( result == CacheExpressionEvaluator.UN_AVAILABLE ) {
@@ -307,7 +314,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 context.setVariable("result", result);
             }
             try {
-                //context.registerFunction("getGeneric", );
+                context.registerFunction("getFirstGenericType", BeanUtils.class.getMethod("getFirstGenericType", Class.class));
             } catch (Exception e){
 
             }
