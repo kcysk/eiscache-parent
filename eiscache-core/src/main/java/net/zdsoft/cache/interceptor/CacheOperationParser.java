@@ -66,7 +66,21 @@ final public class CacheOperationParser {
                 }
             }
 
+            //解析父类接口
+            Class<?> parentClass = targetClass.getSuperclass();
+            if ( !Object.class.equals(parentClass) && parentClass != null) {
+                for (Type type : parentClass.getGenericInterfaces()) {
+                    if (type instanceof ParameterizedType) {
+                        Class<?> clazz = (Class<?>) ((ParameterizedType) type).getRawType();
+                        parseAnnotation(clazz, cacheDefaults, cacheables, cacheRemoves, method);
+                    } else {
+                        parseAnnotation((Class<?>) type, cacheDefaults, cacheables, cacheRemoves, method);
+                    }
+                }
+            }
         }
+
+
         CacheDefault cacheDefault = targetClass.getAnnotation(CacheDefault.class);
         cacheDefault = cacheDefault == null && !cacheDefaults.isEmpty() ? cacheDefaults.get(0) : cacheDefault;
 
@@ -113,7 +127,8 @@ final public class CacheOperationParser {
                 .setTimeUnit(cacheable.timeUnit())
                 .setCacheName(cacheable.cacheName())
                 .setKey(cacheable.key())
-                .setCondition(cacheable.condition());
+                .setCondition(cacheable.condition())
+                .setEntityId(cacheable.entityId());
         if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
             builder.setCacheName(cacheDefault.cacheName());
         }
@@ -126,7 +141,8 @@ final public class CacheOperationParser {
         builder.setAfterInvocation(cacheRemove.afterInvocation())
                 .setCacheName(cacheRemove.cacheName())
                 .setCondition(cacheRemove.condition())
-                .setKey(cacheRemove.key());
+                .setKey(cacheRemove.key())
+                .setEntityId(cacheRemove.entityId());
         if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
             builder.setCacheName(cacheDefault.cacheName());
         }

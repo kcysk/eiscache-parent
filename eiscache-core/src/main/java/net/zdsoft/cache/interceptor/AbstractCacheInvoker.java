@@ -7,6 +7,7 @@ import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.listener.CacheRemoveListener;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,20 +47,20 @@ public abstract class AbstractCacheInvoker {
         return null;
     }
 
-    protected void doRemove(final Cache cache, final Object key) {
+    protected void doRemove(final Cache cache, final Object key, Set<String> entityId) {
         try {
             CacheEvent cacheEvent = new CacheEvent(cache, EventType.REMOVE);
             cacheEvent.setKey(key);
             notifyListener(cacheEvent);
-            cache.remove(key);  //FIXME 可改为异步处理
+            cache.remove(entityId, key);  //FIXME 可改为异步处理
         } catch (RuntimeException e){
             getCacheErrorHandler().doRemoveError(e, cache, key);
         }
     }
 
-    protected void doRemove(final Cache cache, Object ... keys) {
+    protected void doRemove(final Cache cache, Object[] keys, Set<String> entityId) {
         try {
-            cache.remove(keys);
+            cache.remove(entityId, keys);
         } catch (RuntimeException e) {
 
         }

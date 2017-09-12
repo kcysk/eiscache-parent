@@ -42,11 +42,15 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
     public Object executeCacheAround(ProceedingJoinPoint joinPoint){
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
-        Invoker invoker = () -> {
-            try {
-                return joinPoint.proceed();
-            } catch (Throwable throwable) {
-                throw new Invoker.ThrowableWrapper(throwable);
+
+        Invoker invoker = new Invoker() {
+            @Override
+            public Object invoke() {
+                try {
+                    return joinPoint.proceed();
+                } catch (Throwable throwable) {
+                    throw new Invoker.ThrowableWrapper(throwable);
+                }
             }
         };
         try {

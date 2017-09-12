@@ -54,4 +54,6 @@ public @interface Cacheable {
      *
      */
     String unless() default "";
+
+    String entityId() default "";
 }

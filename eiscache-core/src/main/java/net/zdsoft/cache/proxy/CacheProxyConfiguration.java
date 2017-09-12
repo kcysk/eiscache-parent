@@ -13,18 +13,17 @@ import org.springframework.context.annotation.Role;
  * @author shenke
  * @since 2017.09.06
  */
-@Configuration
+//@Configuration
 public class CacheProxyConfiguration {
 
     @Bean(name = "org.zdsoft.cache.proxy.internalCacheAdvisor")
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    public AbstractBeanFactoryPointcutAdvisor cacheAdvisor() {
+    public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor) {
         CacheOperationParser cacheOperationParser = cacheOperationParser();
         AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
         ((CacheBeanFactoryPointCutAdvisor)advisor).setCacheOperationParser(cacheOperationParser);
-        CacheInterceptor interceptor = cacheInterceptor();
-        interceptor.setActiveModel(AdviceMode.PROXY);
-        advisor.setAdvice(interceptor);
+        cacheInterceptor.setActiveModel(AdviceMode.PROXY);
+        advisor.setAdvice(cacheInterceptor);
         return advisor;
     }
 

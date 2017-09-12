@@ -11,6 +11,7 @@ import net.zdsoft.cache.core.support.CacheableOperation;
 import net.zdsoft.cache.expression.CacheEvaluationContext;
 import net.zdsoft.cache.expression.CacheExpressionEvaluator;
 import net.zdsoft.cache.listener.CacheEventListener;
+import org.apache.log4j.Logger;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -27,14 +28,18 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author shenke
  * @since 2017.09.04
  */
 public abstract class CacheAopExecutor extends AbstractCacheInvoker implements ApplicationContextAware, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+
+    private static final Logger logger = Logger.getLogger(CacheAopExecutor.class);
 
     private BeanFactory beanFactory ;
     private CacheExpressionEvaluator evaluator = new CacheExpressionEvaluator(new SpelExpressionParser());
@@ -78,6 +83,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         }
         this.cacheOperationParser = new CacheOperationParser();
         this.initialized = true;
+        logger.info("eiscache start");
     }
 
     private Class<?> getTargetClass(Object target) {
@@ -95,6 +101,10 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             if ( !this.initialized ) {
                 return invoker.invoke();
             }
+            long startTime = System.currentTimeMillis();
+            if ( logger.isDebugEnabled() ) {
+                logger.debug("process cache operation start");
+            }
             Class<?> targetClass =  getTargetClass(target);
             Collection<CacheOperation> operations = this.cacheOperationParser.parser(method, AdviceMode.ASPECTJ.equals(activeModel) ? targetClass : null);
             if ( !operations.isEmpty() ) {
@@ -110,6 +120,9 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 }
 
                 processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, result);
+                if ( logger.isDebugEnabled() ) {
+                    logger.debug("process cache operation end all time is {" + (System.currentTimeMillis() - startTime) + "}ms");
+                }
                 return result;
             }
             return invoker.invoke();
@@ -125,12 +138,15 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         CacheRemoveOperation cacheRemoveOperation = (CacheRemoveOperation) invocationContext.getCacheOperation();
         Cache cache = invocationContext.getCache();
         Object key = invocationContext.generateKey(result);
+
+        Set<String> entityId = invocationContext.entityId(result);
+
         if ( key instanceof Collection) {
-            doRemove(invocationContext.getCache(), ((Collection) key).toArray());
+            doRemove(invocationContext.getCache(), ((Collection) key).toArray(), entityId);
         } else if ( key instanceof Object[] ) {
-            doRemove(invocationContext.getCache(), (Object[]) key);
+            doRemove(invocationContext.getCache(), (Object[]) key, entityId);
         } else {
-            doRemove(cache, key);
+            doRemove(cache, key, entityId);
         }
     }
 
@@ -210,6 +226,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         private Class<?> returnType;
         private Cache cache;
         private CacheOperation cacheOperation;
+        private Class<?> targetClass;
         public CacheInvocationContext(Object target, Method method, Object[] args, Class<?> returnType, CacheOperation cacheOperation) {
             this.target = target;
             this.method = method;
@@ -217,6 +234,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             this.returnType = returnType;
             this.cacheOperation = cacheOperation;
             this.cache = CacheAopExecutor.this.getCache(getCacheOperation().getCacheName());
+            this.targetClass = CacheAopExecutor.this.getTargetClass(target);
         }
 
         @Override
@@ -244,6 +262,10 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return this.cache;
         }
 
+        public Class<?> getTargetClass() {
+            return targetClass;
+        }
+
         @Override
         public CacheOperation getCacheOperation() {
             return this.cacheOperation;
@@ -251,14 +273,29 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
         @Override
         public boolean isCondition(Object result) {
+            if ( "".equals(getCacheOperation().getCondition()) ) {
+                return true;
+            }
             EvaluationContext context = buildContext(result);
             return evaluator.getValue(getCacheOperation().getCondition(), context, Boolean.class);
         }
 
         @Override
         public Object generateKey(Object result) {
+            if ( "".equals(getCacheOperation().getKey()) ) {
+                return "";
+            }
             EvaluationContext context = buildContext(result);
             return evaluator.getValue(getCacheOperation().getKey(), context);
+        }
+
+        @Override
+        public Set<String> entityId(Object result) {
+            if ( "".equals(getCacheOperation().getEntityId()) ) {
+                return Collections.EMPTY_SET;
+            }
+            EvaluationContext context = buildContext(result);
+            return evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
         }
 
         protected EvaluationContext buildContext(Object result) {
@@ -268,6 +305,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             }
             if ( result != CacheExpressionEvaluator.NO_RESULT ) {
                 context.setVariable("result", result);
+            }
+            try {
+                //context.registerFunction("getGeneric", );
+            } catch (Exception e){
+
             }
             context.setBeanResolver(new BeanFactoryResolver(beanFactory));
             return context;

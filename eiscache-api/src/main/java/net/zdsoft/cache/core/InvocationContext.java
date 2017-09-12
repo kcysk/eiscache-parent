@@ -36,4 +36,6 @@ public interface InvocationContext<O extends CacheOperation>  {
      * @see Cacheable#key()
      */
     Object generateKey(Object result);
+
+    Object entityId(Object result);
 }

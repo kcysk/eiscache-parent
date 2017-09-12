@@ -24,4 +24,6 @@ public @interface CacheRemove {
     boolean afterInvocation() default false;
 
     String condition() default "";
+
+    String entityId() default "";
 }

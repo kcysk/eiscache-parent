@@ -33,9 +33,9 @@ public interface Cache {
 
     <C extends CacheConfiguration> C getConfiguration();
 
-    void remove(Object key);
+    void remove(Set<String> entityId, Object key);
 
-    void remove(Object... keys);
+    void remove(Set<String> entityId, Object... keys);
 
     void destroy();
 }

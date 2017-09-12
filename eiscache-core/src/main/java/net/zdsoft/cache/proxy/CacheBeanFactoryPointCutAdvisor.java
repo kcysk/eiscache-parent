@@ -38,7 +38,6 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
                 Class<?> realTargetClass = targetClass.getSuperclass();
                 //处理实际类型和接口类型 （）
                 isCacheInterceptor = isCacheInterceptor || isTarget(realTargetClass, method);
-
             }
 
             Collection<CacheOperation> operations = cacheOperationParser.parser(method);
@@ -50,6 +49,7 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
             boolean isCacheInterceptor = false;
             //处理实际类型
             isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
+
             //处理接口
             for (Type type : targetClass.getGenericInterfaces()) {
                 if ( type instanceof ParameterizedType) {
@@ -63,6 +63,20 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
                     }
                 }
             }
+
+            //处理父类接口
+            Class<?> parentClass = targetClass.getSuperclass();
+            if ( !parentClass.equals(Object.class) ) {
+                for (Type type : parentClass.getGenericInterfaces()) {
+                    if ( type instanceof ParameterizedType ) {
+                        Class<?> parentInterface = (Class<?>) ((ParameterizedType)type).getRawType();
+                        if ( containCacheOperation(parentInterface.getDeclaredMethods(), method) ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
             return isCacheInterceptor;
         }
 
