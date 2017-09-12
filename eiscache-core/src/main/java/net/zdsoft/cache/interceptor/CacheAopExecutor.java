@@ -1,5 +1,6 @@
 package net.zdsoft.cache.interceptor;
 
+import net.zdsoft.cache.BeanUtils;
 import net.zdsoft.cache.Cache;
 import net.zdsoft.cache.CacheManager;
 import net.zdsoft.cache.DefaultErrorHandler;
