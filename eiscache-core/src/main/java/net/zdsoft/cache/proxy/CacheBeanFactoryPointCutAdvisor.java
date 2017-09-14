@@ -1,22 +1,22 @@
 package net.zdsoft.cache.proxy;
 
-import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.interceptor.CacheOperationParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Collection;
 
 /**
  * @author shenke
  * @since 17-9-10下午3:47
  */
 public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcutAdvisor {
+
+    private Logger logger = LoggerFactory.getLogger(CacheBeanFactoryPointCutAdvisor.class);
 
     private CacheOperationParser cacheOperationParser;
 
@@ -27,9 +27,8 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
             boolean isCacheInterceptor = false;
             //接口
             if ( targetClass.isInterface() ) {
-                isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
+                isCacheInterceptor = isTarget(targetClass, method);
             }
-
             //proxy
             if ( AopUtils.isJdkDynamicProxy(targetClass)
                     || AopUtils.isAopProxy(targetClass)
@@ -38,59 +37,17 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
                 Class<?> realTargetClass = targetClass.getSuperclass();
                 //处理实际类型和接口类型 （）
                 isCacheInterceptor = isCacheInterceptor || isTarget(realTargetClass, method);
+            } else {
+                isCacheInterceptor = isCacheInterceptor || isTarget(targetClass, method);
             }
-
-            Collection<CacheOperation> operations = cacheOperationParser.parser(method);
-            isCacheInterceptor = isCacheInterceptor || isTarget(targetClass, method);
+            if ( isCacheInterceptor ) {
+                System.out.println("cacheInterceptor is Method " + method.getName() + " targetClass is " + targetClass.getName());
+            }
             return isCacheInterceptor;
         }
 
         private boolean isTarget(Class<?> targetClass, Method method) {
-            boolean isCacheInterceptor = false;
-            //处理实际类型
-            isCacheInterceptor = containCacheOperation(targetClass.getDeclaredMethods(), method);
-
-            //处理接口
-            for (Type type : targetClass.getGenericInterfaces()) {
-                if ( type instanceof ParameterizedType) {
-                    Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
-                    if ( containCacheOperation(clazz.getDeclaredMethods(), method) ) {
-                        return true;
-                    }
-                }else {
-                    if ( containCacheOperation(((Class<?>) type).getDeclaredMethods(), method) ) {
-                        return true;
-                    }
-                }
-            }
-
-            //处理父类接口
-            Class<?> parentClass = targetClass.getSuperclass();
-            if ( !parentClass.equals(Object.class) ) {
-                for (Type type : parentClass.getGenericInterfaces()) {
-                    if ( type instanceof ParameterizedType ) {
-                        Class<?> parentInterface = (Class<?>) ((ParameterizedType)type).getRawType();
-                        if ( containCacheOperation(parentInterface.getDeclaredMethods(), method) ) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return isCacheInterceptor;
-        }
-
-        private boolean containCacheOperation(Method[] searchMethods, Method method) {
-            for (Method tMethod : searchMethods ) {
-                if ( !tMethod.getName().equals(method.getName()) ) {
-                    continue;
-                }
-                Collection<CacheOperation> cacheOperations = cacheOperationParser.parser(tMethod);
-                if ( cacheOperations != null && !cacheOperations.isEmpty() ) {
-                    return true;
-                }
-            }
-            return false;
+            return !cacheOperationParser.parser(method, targetClass).isEmpty();
         }
     };
 

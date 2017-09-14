@@ -107,7 +107,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 logger.debug("process cache operation start");
             }
             Class<?> targetClass =  getTargetClass(target);
-            Collection<CacheOperation> operations = this.cacheOperationParser.parser(method, AdviceMode.ASPECTJ.equals(activeModel) ? targetClass : null);
+            Collection<CacheOperation> operations = this.cacheOperationParser.parser(method, targetClass);
             if ( !operations.isEmpty() ) {
                 CacheInvocationContexts contexts = new CacheInvocationContexts(operations, target, method, args, returnType);
 
@@ -316,6 +316,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             }
             try {
                 context.registerFunction("getFirstGenericType", BeanUtils.class.getMethod("getFirstGenericType", Class.class));
+                //context.registerFunction("arrayToString", );
             } catch (Exception e){
 
             }

@@ -1,5 +1,6 @@
 package net.zdsoft.cache.interceptor;
 
+import net.zdsoft.cache.BeanUtils;
 import net.zdsoft.cache.annotation.CacheDefault;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.annotation.CacheRemove;
@@ -27,76 +28,122 @@ final public class CacheOperationParser {
 
     private static final Collection<CacheOperation> EMPTY = Collections.emptyList();
 
-    public Collection<CacheOperation> parser(Method method) {
-        return parser(method, null);
-    }
-
+    /**
+     *
+     * @param method
+     * @param targetClass 原始类型
+     * @return
+     */
     public Collection<CacheOperation> parser(Method method, Class<?> targetClass) {
-
-        if (!Modifier.isPublic(method.getModifiers())) {
-            return null;
-        }
-        if ( targetClass != null ) {
-            //get real method
-            Method specificMethod = ClassUtils.getMostSpecificMethod(method, targetClass);
-            method = BridgeMethodResolver.findBridgedMethod(specificMethod);
-        } else {
-            targetClass = method.getDeclaringClass();
-        }
 
         MethodClassKey key = new MethodClassKey(method, targetClass);
         Collection<CacheOperation> cacheOperations = cached.get(key);
         if ( cacheOperations != null && cacheOperations.size() > 0) {
             return cacheOperations;
         }
-
-
-        List<CacheDefault> cacheDefaults = new ArrayList<>(10);
-        List<Cacheable> cacheables = new ArrayList<>(10);
-        List<CacheRemove> cacheRemoves = new ArrayList<>(10);
-        //解析
-        if ( !targetClass.isInterface() ) {
-            Type[] interfaces = targetClass.getGenericInterfaces();
-            for (Type type : interfaces) {
-                if ( type instanceof ParameterizedType) {
-                    Class<?> clazz = (Class<?>) ((ParameterizedType)type).getRawType();
-                    parseAnnotation(clazz, cacheDefaults, cacheables, cacheRemoves, method);
-                }else {
-                    parseAnnotation((Class<?>)type, cacheDefaults, cacheables, cacheRemoves, method);
-                }
-            }
-
-            //解析父类接口
-            Class<?> parentClass = targetClass.getSuperclass();
-            if ( !Object.class.equals(parentClass) && parentClass != null) {
-                for (Type type : parentClass.getGenericInterfaces()) {
-                    if (type instanceof ParameterizedType) {
-                        Class<?> clazz = (Class<?>) ((ParameterizedType) type).getRawType();
-                        parseAnnotation(clazz, cacheDefaults, cacheables, cacheRemoves, method);
-                    } else {
-                        parseAnnotation((Class<?>) type, cacheDefaults, cacheables, cacheRemoves, method);
-                    }
-                }
-            }
-        }
-
-
-        CacheDefault cacheDefault = targetClass.getAnnotation(CacheDefault.class);
-        cacheDefault = cacheDefault == null && !cacheDefaults.isEmpty() ? cacheDefaults.get(0) : cacheDefault;
-
         cacheOperations = new ArrayList<>();
-        Cacheable cacheable = method.getAnnotation(Cacheable.class);
-        cacheable = cacheable == null && !cacheables.isEmpty() ? cacheables.get(0) : cacheable;
+
+        CacheDefault cacheDefault = getCacheDefault(targetClass);
+
+        Cacheable cacheable = getAnnotation(targetClass, method, Cacheable.class);
+        CacheRemove cacheRemove = getAnnotation(targetClass, method, CacheRemove.class);
         if ( cacheable != null ){
             cacheOperations.add(parseCacheable(cacheable, cacheDefault));
         }
-        CacheRemove cacheRemove = method.getAnnotation(CacheRemove.class);
-        cacheRemove = cacheRemove == null && !cacheRemoves.isEmpty() ? cacheRemoves.get(0) : cacheRemove;
         if ( cacheRemove != null ) {
             cacheOperations.add(parseCacheRemove(cacheRemove, cacheDefault));
         }
         cached.put(key, cacheOperations);
         return cacheOperations;
+    }
+
+    public <T extends Annotation> T getAnnotation(Class<?> targetClass, Method method, Class<T> annotationType) {
+        T t = targetClass.getAnnotation(annotationType);
+        AnnotationFilter<T> filter = new AnnotationFilter<T>() {
+            @Override
+            public boolean filter(T t) {
+                return t != null;
+            }
+        };
+        //接口优先原则，顶层接口滞后原则
+        t = t == null ? filterAnnotation(method, getInterfaces(targetClass), annotationType, filter) : t;
+        t = t == null ? filterAnnotation(method, getSupperClasses(targetClass), annotationType, filter) : t;
+        return t;
+    }
+
+    public <T extends Annotation> T filterAnnotation(Method method, Collection<Class<?>> targetClass, Class<T> type ,AnnotationFilter<T> filter) {
+        for (Class<?> aClass : targetClass) {
+            Method sameMethod = BeanUtils.getSameMethod(aClass, method);
+            if (sameMethod != null && filter.filter(sameMethod.getAnnotation(type)) ) {
+                return sameMethod.getAnnotation(type);
+            }
+        }
+        return null;
+    }
+
+    public CacheDefault getCacheDefault(Class<?> targetClass) {
+        CacheDefault cacheDefault = targetClass.getAnnotation(CacheDefault.class);
+        if ( cacheDefault != null && !"".equals(cacheDefault.cacheName()) ) {
+            return cacheDefault;
+        }
+
+        for (Class<?> aClass : getInterfaces(targetClass)) {
+            cacheDefault = aClass.getAnnotation(CacheDefault.class);
+            if ( cacheDefault != null && !"".equals(cacheDefault.cacheName()) ) {
+                return cacheDefault;
+            }
+        }
+
+        for (Class<?> aClass : getSupperClasses(targetClass)) {
+            cacheDefault = aClass.getAnnotation(CacheDefault.class);
+            if ( cacheDefault != null && !"".equals(cacheDefault.cacheName()) ) {
+                return cacheDefault;
+            }
+        }
+        return cacheDefault;
+    }
+
+
+    private interface AnnotationFilter<T extends Annotation> {
+        boolean filter(T t);
+    }
+
+    public List<Class<?>> getSupperClasses(Class<?> targetClass) {
+        if ( targetClass.isInterface() ) {
+            return new ArrayList<>();
+        }
+        Class<?> parentClass = targetClass.getSuperclass();
+        if ( Object.class.equals(parentClass) ) {
+            return Collections.emptyList();
+        }
+        List<Class<?>> parentClassList = new ArrayList<>();
+        parentClassList.add(parentClass);
+        parentClassList.addAll(getSupperClasses(parentClass));
+        return parentClassList;
+    }
+
+    public List<Class<?>> getInterfaces(Class<?> targetClass) {
+        if ( targetClass.isInterface() ) {
+            Class<?>[] interfaces = targetClass.getInterfaces();
+            List<Class<?>> interfaceList = new ArrayList<>();
+            if ( interfaces != null && interfaces.length != 0 ) {
+                interfaceList.addAll(Arrays.asList(interfaces));
+                for (Class<?> aClass : interfaces) {
+                    interfaceList.addAll(getInterfaces(aClass));
+                }
+            }
+            return interfaceList;
+        } else {
+            List<Class<?>> interfaceList = new ArrayList<>();
+            Class<?>[] interfaces = targetClass.getInterfaces();
+            if ( interfaces != null && interfaces.length != 0 ) {
+                interfaceList.addAll(Arrays.asList(interfaces));
+                for (Class<?> aClass : interfaces) {
+                    interfaceList.addAll(getInterfaces(aClass));
+                }
+            }
+            return interfaceList;
+        }
     }
 
     private void parseAnnotation(Class<?> objClass, Collection<CacheDefault> cacheDefaults,

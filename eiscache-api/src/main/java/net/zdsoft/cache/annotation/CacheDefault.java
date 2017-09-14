@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
+/**#getFirstGenericType(#root.targetClass).newInstance().fetchCacheEntitName()
  * @author shenke
  * @since 2017.09.04
  */

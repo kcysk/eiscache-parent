@@ -7,6 +7,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -52,5 +53,13 @@ public class BeanUtils {
 
     public static <O,E> Class<O> getFirstGenericType(Class<E> eClass) {
         return getGenericType(eClass, 1);
+    }
+
+    public static Method getSameMethod(Class<?> targetClass, Method originMethod) {
+        try {
+            return targetClass.getMethod(originMethod.getName(), originMethod.getParameterTypes());
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 }
