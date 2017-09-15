@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import net.zdsoft.cache.configuration.CacheConfiguration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -30,10 +31,11 @@ public class RedisCache implements Cache{
     private String prefix;
     private String cachePrefix;
     private RedisTemplate redisTemplate;
+    public String clearScript;
 
     private byte[] keySetName;
 
-    private Map<Object, Set<Object>> idKeyMap = new ConcurrentHashMap<>(128);
+    private Map<Object, Set<Object>> idKeyMap = new ConcurrentHashMap<>();
 
     public RedisCache(RedisTemplate redisTemplate, String name, String prefix, String cachePrefix) {
         this.redisTemplate = redisTemplate;
@@ -41,6 +43,7 @@ public class RedisCache implements Cache{
         this.prefix = prefix;
         this.cachePrefix = cachePrefix;
         this.keySetName = redisTemplate.getKeySerializer().serialize(name + "<~>keys");
+        this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ cachePrefix + "." + prefix +"*')))";;
     }
 
     @Override
@@ -55,48 +58,52 @@ public class RedisCache implements Cache{
 
     @Override
     public <T> T get(Object key, Class<T> type) {
-        synchronized (keySetName) {
-            Object value = redisTemplate.execute(new RedisCallback<T>() {
-                @Override
-                public T doInRedis(RedisConnection connection) throws DataAccessException {
-                    byte[] keyBytes = getKey(key);
-                    byte[] value = connection.get(keyBytes);
-                    if (native_type.contains(type)) {
-                        return (T) redisTemplate.getValueSerializer().deserialize(value);
-                    }
-                    if ( value == null ) {
-                        return null;
-                    }
-                    return JSON.parseObject(new String(value), type);
+        Object value = redisTemplate.execute(new RedisCallback<T>() {
+            @Override
+            public T doInRedis(RedisConnection connection) throws DataAccessException {
+                byte[] keyBytes = getKey(key);
+                byte[] value = connection.get(keyBytes);
+                if ( value == null ) {
+                    return null;
                 }
-            }, true);
-            return (T) value;
-        }
+                if (native_type.contains(type)) {
+                    return (T) redisTemplate.getValueSerializer().deserialize(value);
+                }
+                if ( !NATIVE_COLLECTION_TYPE.contains(type) && !ReturnTypeContext.getEntityType().equals(ReturnTypeContext.getReturnType()) ) {
+                    return JSON.parseObject(new String(value), (Class<T>) ReturnTypeContext.getEntityType());
+                }
+                return JSON.parseObject(new String(value), type);
+            }
+        }, true);
+        return (T) value;
     }
 
     @Override
     public void remove(Set<String> entityId, Object key) {
-        synchronized ( keySetName ){
-            Set<Object> keySet = new HashSet<>();
-            for (String id : entityId) {
-                keySet.addAll(idKeyMap.get(id));
-                idKeyMap.remove(id);
-            }
-            redisTemplate.execute(new RedisCallback() {
-                @Override
-                public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                    keySet.add(key);
-                    List<byte[]> keyBytes = getKey(keySet);
-                    connection.del(keyBytes.toArray(new byte[keyBytes.size()][]));
-                    connection.zRem(keySetName, keyBytes.toArray(new byte[keyBytes.size()][]));
-                    return null;
-                }
-            },true);
+        Set<Object> keySet = new HashSet<>();
+        for (String id : entityId) {
+            keySet.addAll(idKeyMap.get(id));
+            idKeyMap.remove(id);
         }
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                keySet.add(key);
+                List<byte[]> keyBytes = getKey(keySet);
+                connection.del(keyBytes.toArray(new byte[keyBytes.size()][]));
+                connection.zRem(keySetName, keyBytes.toArray(new byte[keyBytes.size()][]));
+                return null;
+            }
+        },true);
     }
 
     @Override
     public void remove(Set<String> entityId, Object... keys) {
+        Set<Object> keySet = new HashSet<>();
+        for (String id : entityId) {
+            keySet.addAll(idKeyMap.get(id));
+            idKeyMap.remove(id);
+        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
@@ -112,50 +119,47 @@ public class RedisCache implements Cache{
     }
 
     @Override
+    public void removeAll() {
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                connection.eval(redisTemplate.getKeySerializer().serialize(clearScript), ReturnType.INTEGER, 0, getKey(""));
+                return null;
+            }
+        });
+    }
+
+    @Override
     public <T> T get(Object key, Callable<T> valueLoader) {
         return null;
     }
 
     @Override
-    public void put(Object key, Object value) {
-
-        synchronized (keySetName) {
-            //value is Entity
-            if ( value instanceof Collection ) {
-                Set<Object> idSet = BeanUtils.getId((Collection<?>) value);
-                Set<Object> keySet;
-                for (Object id : idSet) {
-                    keySet = idKeyMap.get(id);
-                    if ( keySet == null ) {
-                        keySet = new HashSet<>();
-                    }
-                    keySet.add(key);
-                }
+    public void put(Set<String> entityId, Object key, Object value) {
+        //value is Entity
+        if ( entityId != null && entityId.isEmpty() ) {
+            for (String id : entityId) {
+                idKeyMap.get(id).add(key);
             }
-            if ( !native_type.contains(value.getClass()) ) {
-                Object id = BeanUtils.getId(value);
-                if ( id != null ) {
-                    Set<Object> keySet = idKeyMap.get(id);
-                    if ( keySet != null ) {
-                        keySet.add(key);
-                    }
-                }
-            }
-
-            redisTemplate.execute(new RedisCallback() {
-                @Override
-                public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                    byte[] keyBytes = getKey(key);
-                    connection.set(keyBytes, redisTemplate.getValueSerializer().serialize(value));
-                    connection.zAdd(keySetName, 0 , keyBytes);
-                    return null;
-                }
-            });
         }
+        redisTemplate.execute(new RedisCallback() {
+            @Override
+            public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                byte[] keyBytes = getKey(key);
+                connection.set(keyBytes, redisTemplate.getValueSerializer().serialize(value));
+                connection.zAdd(keySetName, 0 , keyBytes);
+                return null;
+            }
+        });
     }
 
     @Override
-    public void put(Object key, Object value, long seconds) {
+    public void put(Set<String> entityId, Object key, Object value, long seconds) {
+        if ( entityId != null && entityId.isEmpty() ) {
+            for (String id : entityId) {
+                idKeyMap.get(id).add(key);
+            }
+        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
@@ -168,11 +172,15 @@ public class RedisCache implements Cache{
     }
 
     @Override
-    public void put(Object key, Object value, int account, TimeUnit timeUnit) {
+    public void put(Set<String> entityId, Object key, Object value, int account, TimeUnit timeUnit) {
         if ( account == 0 ) {
-            //never expire
-            put(key, value);
+            put(entityId, key, value);
             return ;
+        }
+        if ( entityId != null && entityId.isEmpty() ) {
+            for (String id : entityId) {
+                idKeyMap.get(id).add(key);
+            }
         }
         redisTemplate.execute(new RedisCallback() {
             @Override
@@ -221,7 +229,7 @@ public class RedisCache implements Cache{
     private byte[] getKey(Object key) {
         byte[] keyBytes = null;
         if ( getConfiguration().getKeyType().equals(String.class) ) {
-            keyBytes = convertToByteIfNecessary(cachePrefix + prefix + key.toString() , redisTemplate.getKeySerializer());
+            keyBytes = convertToByteIfNecessary(cachePrefix + prefix + "." + key.toString() , redisTemplate.getKeySerializer());
         }
         if ( keyBytes == null ) {
             keyBytes = convertToByteIfNecessary(key, redisTemplate.getKeySerializer());
@@ -248,6 +256,14 @@ public class RedisCache implements Cache{
         add(String.class);
         add(boolean.class);
         add(Boolean.class);
+    }};
+
+    private static final Set<Class<?>> NATIVE_COLLECTION_TYPE = new HashSet<Class<?>>(){{
+       add(Set.class);
+       add(List.class);
+       add(ArrayList.class);
+       add(HashSet.class);
+       add(Map.class);
     }};
 
     public void setCacheConfiguration(CacheConfiguration cacheConfiguration) {

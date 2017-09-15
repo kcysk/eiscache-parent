@@ -5,6 +5,7 @@ import net.zdsoft.cache.Cache;
 import net.zdsoft.cache.CacheManager;
 import net.zdsoft.cache.DefaultErrorHandler;
 import net.zdsoft.cache.Invoker;
+import net.zdsoft.cache.MethodClassKey;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.core.InvocationContext;
 import net.zdsoft.cache.core.support.CacheRemoveOperation;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author shenke
@@ -51,6 +53,8 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     private boolean initialized = false;
     private ApplicationContext applicationContext;
     private AdviceMode activeModel;
+
+    private Map<MethodClassKey, Boolean> NO_KEY_CACHE = new ConcurrentHashMap<>();
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -87,7 +91,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         logger.info("eiscache start");
     }
 
-    private Class<?> getTargetClass(Object target) {
+    protected Class<?> getTargetClass(Object target) {
         //有可能是代理类
         Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
         if (targetClass == null && target != null) {
@@ -102,11 +106,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             if ( !this.initialized ) {
                 return invoker.invoke();
             }
-            long startTime = System.currentTimeMillis();
-            if ( logger.isDebugEnabled() ) {
-                logger.debug("process cache operation start");
-            }
             Class<?> targetClass =  getTargetClass(target);
+            if ( Boolean.TRUE.equals(NO_KEY_CACHE.get(new MethodClassKey(method, targetClass))) ) {
+                return invoker.invoke();
+            }
+            long startTime = System.currentTimeMillis();
             Collection<CacheOperation> operations = this.cacheOperationParser.parser(method, targetClass);
             if ( !operations.isEmpty() ) {
                 CacheInvocationContexts contexts = new CacheInvocationContexts(operations, target, method, args, returnType);
@@ -122,7 +126,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
                 processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, result);
                 if ( logger.isDebugEnabled() ) {
-                    logger.debug("process cache operation end all time is {" + (System.currentTimeMillis() - startTime) + "}ms");
+                    logger.debug("process method " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" + (System.currentTimeMillis() - startTime) + "}ms");
                 }
                 return result;
             }
@@ -137,6 +141,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return ;
         }
         CacheRemoveOperation cacheRemoveOperation = (CacheRemoveOperation) invocationContext.getCacheOperation();
+        if ( cacheRemoveOperation.isAllEntries() ) {
+            doRemoveAll(invocationContext.getCache());
+            logger.debug("process method " + invocationContext.getTargetClass().getName() + " remove all");
+            return ;
+        }
         Cache cache = invocationContext.getCache();
         Object key = invocationContext.generateKey(result);
 
@@ -165,18 +174,23 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             if ( !invocationContext.isCondition(result) ) {
                 return ;
             }
+            if ( key == null || "".equals(key) ) {
+                NO_KEY_CACHE.put(new MethodClassKey(invocationContext.getMethod(), invocationContext.getTargetClass()), Boolean.TRUE);
+                logger.warn( invocationContext.getTargetClass().getName() + "#" + invocationContext.getMethod().getName() + " cacheable no key ");
+                return ;
+            }
             CacheableOperation operation = (CacheableOperation) invocationContext.getCacheOperation();
-
+            Set<String> entityId = invocationContext.entityId(result);
             if ( key.getClass().isArray() ) {
                 for (Object o : (Object[]) key) {
-                    doPut(invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
+                    doPut(entityId, invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
                 }
             } else if ( key instanceof Collection) {
                 for (Object o : (Collection) key) {
-                    doPut(invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
+                    doPut(entityId, invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
                 }
             } else {
-                doPut(invocationContext.getCache(), key, result, operation.getExpire(), operation.getTimeUnit());
+                doPut(entityId, invocationContext.getCache(), key, result, operation.getExpire(), operation.getTimeUnit());
             }
         }
     }
@@ -297,6 +311,13 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 return Collections.EMPTY_SET;
             }
             EvaluationContext context = buildContext(result);
+            if ( logger.isDebugEnabled() ) {
+                StringBuffer parameterTypename = new StringBuffer();
+                for (Class<?> aClass : method.getParameterTypes()) {
+                    parameterTypename.append(aClass.getSimpleName()).append(";");
+                }
+                logger.debug("method parameter type is " + method.getParameterTypes());
+            }
             return evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
         }
 

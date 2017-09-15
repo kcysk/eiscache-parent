@@ -20,18 +20,18 @@ public abstract class AbstractCacheInvoker {
 
     protected abstract Collection<CacheEventListener> getCacheEventListener();
 
-    protected void doPut(Cache cache, Object key, Object value) {
+    protected void doPut(Set<String> entityId, Cache cache, Object key, Object value) {
         try {
             //CacheEvent cachePutEvent = new CacheableEvent(EventType.CREATE, );
-            cache.put(key, value);
+            cache.put(entityId, key, value);
         } catch (RuntimeException e) {
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
     }
 
-    protected void doPut(Cache cache, Object key, Object value, int account, TimeUnit timeUnit) {
+    protected void doPut(Set<String> entityId,Cache cache, Object key, Object value, int account, TimeUnit timeUnit) {
         try {
-            cache.put(key, value, account, timeUnit);
+            cache.put(entityId, key, value, account, timeUnit);
         } catch (RuntimeException e) {
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
@@ -55,6 +55,14 @@ public abstract class AbstractCacheInvoker {
             cache.remove(entityId, key);  //FIXME 可改为异步处理
         } catch (RuntimeException e){
             getCacheErrorHandler().doRemoveError(e, cache, key);
+        }
+    }
+
+    protected void doRemoveAll(Cache cache) {
+        try {
+            cache.removeAll();
+        } catch (Exception e){
+
         }
     }
 

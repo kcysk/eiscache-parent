@@ -9,10 +9,12 @@ import net.zdsoft.cache.core.CacheOperation;
 public class CacheRemoveOperation extends CacheOperation {
 
     private boolean afterInvocation;
+    private boolean allEntries;
 
     public CacheRemoveOperation(Builder builder) {
         super(builder);
         this.afterInvocation = builder.afterInvocation;
+        this.allEntries = builder.allEntries;
     }
 
     public boolean isAfterInvocation() {
@@ -22,10 +24,20 @@ public class CacheRemoveOperation extends CacheOperation {
     public static class Builder extends CacheOperation.Builder {
 
         private boolean afterInvocation;
+        private boolean allEntries;
 
         public Builder setAfterInvocation(boolean afterInvocation) {
             this.afterInvocation = afterInvocation;
             return this;
         }
+
+        public Builder setAllEntries(boolean allEntries) {
+            this.allEntries = allEntries;
+            return this;
+        }
+    }
+
+    public boolean isAllEntries() {
+        return allEntries;
     }
 }

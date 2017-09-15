@@ -1,6 +1,7 @@
 package net.zdsoft.cache.interceptor;
 
 import net.zdsoft.cache.BeanUtils;
+import net.zdsoft.cache.MethodClassKey;
 import net.zdsoft.cache.annotation.CacheDefault;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.annotation.CacheRemove;
@@ -59,22 +60,16 @@ final public class CacheOperationParser {
 
     public <T extends Annotation> T getAnnotation(Class<?> targetClass, Method method, Class<T> annotationType) {
         T t = targetClass.getAnnotation(annotationType);
-        AnnotationFilter<T> filter = new AnnotationFilter<T>() {
-            @Override
-            public boolean filter(T t) {
-                return t != null;
-            }
-        };
         //接口优先原则，顶层接口滞后原则
-        t = t == null ? filterAnnotation(method, getInterfaces(targetClass), annotationType, filter) : t;
-        t = t == null ? filterAnnotation(method, getSupperClasses(targetClass), annotationType, filter) : t;
+        t = t == null ? filterAnnotation(method, getInterfaces(targetClass), annotationType) : t;
+        t = t == null ? filterAnnotation(method, getSupperClasses(targetClass), annotationType) : t;
         return t;
     }
 
-    public <T extends Annotation> T filterAnnotation(Method method, Collection<Class<?>> targetClass, Class<T> type ,AnnotationFilter<T> filter) {
+    public <T extends Annotation> T filterAnnotation(Method method, Collection<Class<?>> targetClass, Class<T> type) {
         for (Class<?> aClass : targetClass) {
             Method sameMethod = BeanUtils.getSameMethod(aClass, method);
-            if (sameMethod != null && filter.filter(sameMethod.getAnnotation(type)) ) {
+            if (sameMethod != null && sameMethod.getAnnotation(type) != null ) {
                 return sameMethod.getAnnotation(type);
             }
         }
@@ -101,11 +96,6 @@ final public class CacheOperationParser {
             }
         }
         return cacheDefault;
-    }
-
-
-    private interface AnnotationFilter<T extends Annotation> {
-        boolean filter(T t);
     }
 
     public List<Class<?>> getSupperClasses(Class<?> targetClass) {
@@ -195,60 +185,5 @@ final public class CacheOperationParser {
         }
         CacheRemoveOperation cacheRemoveOperation = new CacheRemoveOperation(builder);
         return cacheRemoveOperation;
-    }
-
-    class MethodClassKey implements Comparable<MethodClassKey> {
-        private final Method method;
-
-        private final Class<?> targetClass;
-
-
-        /**
-         * Create a key object for the given method and target class.
-         * @param method the method to wrap (must not be {@code null})
-         * @param targetClass the target class that the method will be invoked
-         * on (may be {@code null} if identical to the declaring class)
-         */
-        public MethodClassKey(Method method, Class<?> targetClass) {
-            this.method = method;
-            this.targetClass = targetClass;
-        }
-
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            }
-            if (!(other instanceof MethodClassKey)) {
-                return false;
-            }
-            MethodClassKey otherKey = (MethodClassKey) other;
-            return (this.method.equals(otherKey.method) &&
-                    ObjectUtils.nullSafeEquals(this.targetClass, otherKey.targetClass));
-        }
-
-        @Override
-        public int hashCode() {
-            return this.method.hashCode() + (this.targetClass != null ? this.targetClass.hashCode() * 29 : 0);
-        }
-
-        @Override
-        public String toString() {
-            return this.method + (this.targetClass != null ? " on " + this.targetClass : "");
-        }
-
-        @Override
-        public int compareTo(MethodClassKey other) {
-            int result = this.method.getName().compareTo(other.method.getName());
-            if (result == 0) {
-                result = this.method.toString().compareTo(other.method.toString());
-                if (result == 0 && this.targetClass != null) {
-                    result = this.targetClass.getName().compareTo(other.targetClass.getName());
-                }
-            }
-            return result;
-        }
-
     }
 }

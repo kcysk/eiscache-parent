@@ -3,6 +3,7 @@ package net.zdsoft.cache.proxy;
 import net.zdsoft.cache.interceptor.CacheInterceptor;
 import net.zdsoft.cache.interceptor.CacheOperationParser;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +19,7 @@ public class CacheProxyConfiguration {
 
     @Bean(name = "org.zdsoft.cache.proxy.internalCacheAdvisor")
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor) {
-        CacheOperationParser cacheOperationParser = cacheOperationParser();
+    public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor, CacheOperationParser cacheOperationParser) {
         AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
         ((CacheBeanFactoryPointCutAdvisor)advisor).setCacheOperationParser(cacheOperationParser);
         cacheInterceptor.setActiveModel(AdviceMode.PROXY);

@@ -1,8 +1,11 @@
 package net.zdsoft.cache.interceptor;
 
+import net.zdsoft.cache.BeanUtils;
 import net.zdsoft.cache.Invoker;
+import net.zdsoft.cache.ReturnTypeContext;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.support.AopUtils;
 
 /**
  * @author shenke
@@ -22,6 +25,12 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
                 }
             }
         };
+        //当使用基类和泛型的时候，
+        Class<?> targetClass = getTargetClass(invocation.getThis());
+
+        ReturnTypeContext.registerReturnType(invocation.getMethod().getReturnType());
+        ReturnTypeContext.registerEntityType(BeanUtils.getFirstGenericType(targetClass));
+
         return execute(invoker, invocation.getThis(), invocation.getMethod(), invocation.getArguments(), invocation.getMethod().getReturnType());
     }
 }

@@ -17,7 +17,7 @@ import java.util.Map;
 public class RedisCacheManager extends AbstractCacheManager {
 
     private RedisTemplate redisTemplate;
-    private static final String PREFIX_REDIS = "eis.v7";
+    private static final String PREFIX_REDIS = "cache.";
     private String redisCachePrefix;
 
     public RedisCacheManager(RedisTemplate redisTemplate) {

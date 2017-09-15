@@ -23,11 +23,11 @@ public interface Cache {
 
     <T> T get(Object key, Callable<T> valueLoader);
 
-    void put(Object key, Object value);
+    void put(Set<String> entityId, Object key, Object value);
 
-    void put(Object key, Object value, long seconds);
+    void put(Set<String> entityId, Object key, Object value, long seconds);
 
-    void put(Object key, Object value, int account, TimeUnit timeUnit);
+    void put(Set<String> entityId, Object key, Object value, int account, TimeUnit timeUnit);
 
     Object putIfAbsent(Object key, Object value, Class<?> type);
 
@@ -36,6 +36,8 @@ public interface Cache {
     void remove(Set<String> entityId, Object key);
 
     void remove(Set<String> entityId, Object... keys);
+
+    void removeAll();
 
     void destroy();
 }
