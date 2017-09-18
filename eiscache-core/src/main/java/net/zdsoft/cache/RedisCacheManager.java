@@ -17,7 +17,7 @@ import java.util.Map;
 public class RedisCacheManager extends AbstractCacheManager {
 
     private RedisTemplate redisTemplate;
-    private static final String PREFIX_REDIS = "cache.";
+    private static final String PREFIX_REDIS = "cache";
     private String redisCachePrefix;
 
     public RedisCacheManager(RedisTemplate redisTemplate) {
@@ -34,7 +34,7 @@ public class RedisCacheManager extends AbstractCacheManager {
     }
 
     private Cache createAndAdd(String cacheName) {
-        RedisCache cache = new RedisCache(redisTemplate, cacheName, cacheName, PREFIX_REDIS);
+        RedisCache cache = new RedisCache(redisTemplate, cacheName, PREFIX_REDIS);
         cache.setCacheConfiguration(getDefaultConfiguration());
         addCache(cache);
         return cache;

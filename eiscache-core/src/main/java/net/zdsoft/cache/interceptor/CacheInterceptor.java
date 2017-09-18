@@ -1,11 +1,10 @@
 package net.zdsoft.cache.interceptor;
 
-import net.zdsoft.cache.BeanUtils;
+import net.zdsoft.cache.utils.BeanUtils;
 import net.zdsoft.cache.Invoker;
-import net.zdsoft.cache.ReturnTypeContext;
+import net.zdsoft.cache.utils.ReturnTypeContext;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.aop.support.AopUtils;
 
 /**
  * @author shenke

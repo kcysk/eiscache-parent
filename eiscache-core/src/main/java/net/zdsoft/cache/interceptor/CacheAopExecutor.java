@@ -1,11 +1,11 @@
 package net.zdsoft.cache.interceptor;
 
-import net.zdsoft.cache.BeanUtils;
+import net.zdsoft.cache.utils.BeanUtils;
 import net.zdsoft.cache.Cache;
 import net.zdsoft.cache.CacheManager;
 import net.zdsoft.cache.DefaultErrorHandler;
 import net.zdsoft.cache.Invoker;
-import net.zdsoft.cache.MethodClassKey;
+import net.zdsoft.cache.utils.MethodClassKey;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.core.InvocationContext;
 import net.zdsoft.cache.core.support.CacheRemoveOperation;
@@ -29,6 +29,7 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,16 +116,26 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             if ( !operations.isEmpty() ) {
                 CacheInvocationContexts contexts = new CacheInvocationContexts(operations, target, method, args, returnType);
 
-                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), false, CacheExpressionEvaluator.NO_RESULT);
+                //delete cache before invoke method
+                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, CacheExpressionEvaluator.UN_AVAILABLE);
 
-                Object result = getFromCache(contexts.getInvocationContext(CacheableOperation.class));
-
-                if ( result == null ) {
+                //get from cache or put
+                Object result = null;
+                //process cacheable
+                if ( contexts.getInvocationContext(CacheableOperation.class) != null ) {
+                    result = getFromCache(contexts.getInvocationContext(CacheableOperation.class));
+                    if ( result == null ) {
+                        result = invoker.invoke();
+                        processCachePut(contexts.getInvocationContext(CacheableOperation.class), result);
+                    }
+                }
+                //is remove so invoke method
+                else {
                     result = invoker.invoke();
-                    processCachePut(contexts.getInvocationContext(CacheableOperation.class), result);
                 }
 
-                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), true, result);
+                //delete cache after invoke method
+                processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), false, result);
                 if ( logger.isDebugEnabled() ) {
                     logger.debug("process method " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" + (System.currentTimeMillis() - startTime) + "}ms");
                 }
@@ -181,6 +192,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             }
             CacheableOperation operation = (CacheableOperation) invocationContext.getCacheOperation();
             Set<String> entityId = invocationContext.entityId(result);
+
             if ( key.getClass().isArray() ) {
                 for (Object o : (Object[]) key) {
                     doPut(entityId, invocationContext.getCache(), o, result, operation.getExpire(), operation.getTimeUnit());
@@ -289,11 +301,21 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
         @Override
         public boolean isCondition(Object result) {
-            if ( "".equals(getCacheOperation().getCondition()) ) {
-                return true;
+            Boolean condition = null;
+            try {
+                if ( "".equals(getCacheOperation().getCondition()) ) {
+                    return true;
+                }
+                EvaluationContext context = buildContext(result);
+                condition = evaluator.getValue(getCacheOperation().getCondition(), context, Boolean.class);
+                if ( logger.isDebugEnabled() ) {
+                    //logger.debug(targetClass.getName() + "#" + method.getName() + " cache condition {" + getCacheOperation().getCondition() + "} is " + (condition == null ? "false" : condition));
+                }
+            } catch (Exception e) {
+                //logger.error(" evaluator condition is error , don't cache", e);
+                return false;
             }
-            EvaluationContext context = buildContext(result);
-            return evaluator.getValue(getCacheOperation().getCondition(), context, Boolean.class);
+            return condition;
         }
 
         @Override
@@ -302,7 +324,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 return "";
             }
             EvaluationContext context = buildContext(result);
-            return evaluator.getValue(getCacheOperation().getKey(), context);
+            Object key = evaluator.getValue(getCacheOperation().getKey(), context);
+            if ( logger.isDebugEnabled() ) {
+                //logger.debug(targetClass.getName() + "#" + method.getName() + " cache key {" + getCacheOperation().getKey() + "} is " + (key == null ? "null" : key));
+            }
+            return key;
         }
 
         @Override
@@ -311,14 +337,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 return Collections.EMPTY_SET;
             }
             EvaluationContext context = buildContext(result);
+            Set<String> entityIds = evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
             if ( logger.isDebugEnabled() ) {
-                StringBuffer parameterTypename = new StringBuffer();
-                for (Class<?> aClass : method.getParameterTypes()) {
-                    parameterTypename.append(aClass.getSimpleName()).append(";");
-                }
-                logger.debug("method parameter type is " + method.getParameterTypes());
+                //logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new String[entityIds.size()])));
             }
-            return evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
+            return entityIds;
         }
 
         @Override

@@ -2,6 +2,8 @@ package net.zdsoft.cache;
 
 import com.alibaba.fastjson.JSON;
 import net.zdsoft.cache.configuration.CacheConfiguration;
+import net.zdsoft.cache.utils.ReturnTypeContext;
+import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.ReturnType;
@@ -10,40 +12,58 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * <p>
+ *    redis缓存实现，以key-value的形式缓存数据<br>
+ *    通过KEY_SET_NAME---key缓存所有的key值  id-key -- set<key> 的形式将entityId和key对应<br>
+ *    更新缓存时利用entityId更新相关的所有缓存
+ * </p>
  * @author shenke
  * @since 2017.09.04
  */
 public class RedisCache implements Cache{
 
+    private Logger logger = Logger.getLogger(RedisCache.class);
+
+    /**
+     * 详细说明参见addKeyByEntityId.lua
+     */
+    private String ADD_ID_KEY = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do redis.call('SADD', '#ID_KEY_PREFIX'..entityId, KEYS[1]); end; end;return count;";
+    public static final String R_ENTITY_IDS = "#ENTITY_IDS";
+    public static final String R_KEY = "#KEY";
+    public static final String R_ID_KEY_PREFIX = "#ID_KEY_PREFIX";
+
+    /**
+     * 详细说明参见
+     * net/zdsoft/cache/lua/delKeyByEntityId.lua
+     */
+    private String DEL_BY_ENTITYIDS = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do local allKey = redis.call('SMEMBERS', '#ID_KEY_PREFIX'..entityId); if ( #allKey > 0 ) then for k,val in ipairs(allKey) do redis.call('DEL', val); redis.call('ZREM','#KEY_SET_NAME', val); end; end; redis.call('DEL', '#ID_KEY_PREFIX'..entityId); end; end; ";
+
     private CacheConfiguration cacheConfiguration;
     private String name;
-    private String prefix;
-    private String cachePrefix;
+    private String cacheGlobalPrefix;
     private RedisTemplate redisTemplate;
     public String clearScript;
 
-    private byte[] keySetName;
+    private byte[] KEY_SET_NAME;
+    private String ID_KEY_PREFIX;
 
-    private Map<Object, Set<Object>> idKeyMap = new ConcurrentHashMap<>();
-
-    public RedisCache(RedisTemplate redisTemplate, String name, String prefix, String cachePrefix) {
+    public RedisCache(RedisTemplate redisTemplate, String name, String cacheGlobalPrefix) {
         this.redisTemplate = redisTemplate;
         this.name = name;
-        this.prefix = prefix;
-        this.cachePrefix = cachePrefix;
-        this.keySetName = redisTemplate.getKeySerializer().serialize(name + "<~>keys");
-        this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ cachePrefix + "." + prefix +"*')))";;
+        this.cacheGlobalPrefix = cacheGlobalPrefix;
+        this.KEY_SET_NAME = redisTemplate.getKeySerializer().serialize(cacheGlobalPrefix+ "." + name + "<~>keys");
+        this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ this.cacheGlobalPrefix + "." + name +".*')))";;
+        //ID_KEY_MAP_NAME = redisTemplate.getKeySerializer().serialize(name + "." + "id-key-map-name");
+        ID_KEY_PREFIX = cacheGlobalPrefix + "." + name + ".id-key.";
     }
 
     @Override
@@ -53,7 +73,7 @@ public class RedisCache implements Cache{
 
     @Override
     public Object getNativeCache() {
-        return null;
+        return redisTemplate;
     }
 
     @Override
@@ -80,39 +100,52 @@ public class RedisCache implements Cache{
 
     @Override
     public void remove(Set<String> entityId, Object key) {
-        Set<Object> keySet = new HashSet<>();
-        for (String id : entityId) {
-            keySet.addAll(idKeyMap.get(id));
-            idKeyMap.remove(id);
-        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                keySet.add(key);
-                List<byte[]> keyBytes = getKey(keySet);
-                connection.del(keyBytes.toArray(new byte[keyBytes.size()][]));
-                connection.zRem(keySetName, keyBytes.toArray(new byte[keyBytes.size()][]));
+                connection.del(getKey(key));
+                String delScript = DEL_BY_ENTITYIDS.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
+                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX)
+                        .replace("#KEY_SET_NAME", cacheGlobalPrefix + "." + name + "<~>keys");
+                delScript += "redis.call('DEL',KEYS[1]); return count;";
+                connection.eval(redisTemplate.getKeySerializer().serialize(delScript), ReturnType.INTEGER, 1, getKey(key == null ? "null" : key));
                 return null;
             }
         },true);
     }
 
+    private String buildEntityIds2LuaArray(Set<String> entityIds) {
+        StringBuilder luaArray = new StringBuilder("");
+        for (String id : entityIds) {
+            luaArray.append("\"").append(id).append("\",");
+        }
+        luaArray.replace(luaArray.length()-1, luaArray.length(), "");
+        return luaArray.toString();
+    }
+
     @Override
     public void remove(Set<String> entityId, Object... keys) {
-        Set<Object> keySet = new HashSet<>();
-        for (String id : entityId) {
-            keySet.addAll(idKeyMap.get(id));
-            idKeyMap.remove(id);
-        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                Collection<byte[]> keyCollections = Collections.EMPTY_SET;
+
+                connection.del(getKey(keys).toArray(new byte[0][]));
+                String delScript = DEL_BY_ENTITYIDS.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
+                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX)
+                        .replace("#KEY_SET_NAME", cacheGlobalPrefix + "." + name + "<~>keys");
+                StringBuilder scriptBuffer = new StringBuilder(delScript);
+                scriptBuffer.append("\"redis.call('DEL',");
+                int index = 1;
                 for (Object key : keys) {
-                    keyCollections.add(getKey(key));
+                    scriptBuffer.append("ARGV[1]");
+                    if ( index != keys.length ) {
+                        scriptBuffer.append(",");
+                        index ++;
+                    } else {
+                        scriptBuffer.append(");return count;");
+                    }
                 }
-                connection.del(keyCollections.toArray(new byte[keyCollections.size()][]));
-                connection.zRem(keySetName, keyCollections.toArray(new byte[keyCollections.size()][]));
+                connection.eval(redisTemplate.getKeySerializer().serialize(scriptBuffer.toString()), ReturnType.INTEGER, index, getKey(keys).toArray(new byte[index][]));
                 return null;
             }
         });
@@ -123,7 +156,14 @@ public class RedisCache implements Cache{
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                connection.eval(redisTemplate.getKeySerializer().serialize(clearScript), ReturnType.INTEGER, 0, getKey(""));
+                try {
+                    connection.eval(redisTemplate.getKeySerializer().serialize(clearScript), ReturnType.INTEGER, 0, getKey(""));
+                } catch (Exception e) {
+                    logger.error("clear cache " + name + " use lua script error, try again(use jedis client)", e);
+                    Set<byte[]> keySets = connection.zRange(KEY_SET_NAME, 0, -1);
+                    keySets.add(KEY_SET_NAME);
+                    connection.del(keySets.toArray(new byte[keySets.size()][]));
+                }
                 return null;
             }
         });
@@ -134,20 +174,26 @@ public class RedisCache implements Cache{
         return null;
     }
 
+    private Map<byte[], byte[]> buildIDKeyMap(Set<String> entityIds, byte[] keyBytes) {
+        Map<byte[], byte[]> IDKeyMap = new HashMap<>();
+        for (String id : entityIds) {
+            IDKeyMap.put(redisTemplate.getHashKeySerializer().serialize(id), keyBytes);
+        }
+        return IDKeyMap;
+    }
+
     @Override
     public void put(Set<String> entityId, Object key, Object value) {
-        //value is Entity
-        if ( entityId != null && entityId.isEmpty() ) {
-            for (String id : entityId) {
-                idKeyMap.get(id).add(key);
-            }
-        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.set(keyBytes, redisTemplate.getValueSerializer().serialize(value));
-                connection.zAdd(keySetName, 0 , keyBytes);
+                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
+                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
+                connection.eval(redisTemplate.getKeySerializer().serialize(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
+                //connection.hMSet(ID_KEY_MAP_NAME, buildIDKeyMap(entityId, keyBytes));
+                connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
         });
@@ -155,17 +201,16 @@ public class RedisCache implements Cache{
 
     @Override
     public void put(Set<String> entityId, Object key, Object value, long seconds) {
-        if ( entityId != null && entityId.isEmpty() ) {
-            for (String id : entityId) {
-                idKeyMap.get(id).add(key);
-            }
-        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.setEx(keyBytes, seconds, redisTemplate.getValueSerializer().serialize(value));
-                connection.zAdd(keySetName, 0 , keyBytes);
+                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
+                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
+                connection.eval(redisTemplate.getKeySerializer().serialize(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
+                //connection.hMSet(ID_KEY_MAP_NAME, buildIDKeyMap(entityId, keyBytes));
+                connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
         });
@@ -177,11 +222,6 @@ public class RedisCache implements Cache{
             put(entityId, key, value);
             return ;
         }
-        if ( entityId != null && entityId.isEmpty() ) {
-            for (String id : entityId) {
-                idKeyMap.get(id).add(key);
-            }
-        }
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
@@ -189,9 +229,13 @@ public class RedisCache implements Cache{
                 if ( TimeUnit.MICROSECONDS.equals(timeUnit) ) {
                     connection.pSetEx(keyBytes, timeUnit.toMillis(account), redisTemplate.getValueSerializer().serialize(value));
                 } else {
-                  connection.setEx(keyBytes, timeUnit.toSeconds(account), redisTemplate.getValueSerializer().serialize(value));
+                    connection.setEx(keyBytes, timeUnit.toSeconds(account), redisTemplate.getValueSerializer().serialize(value));
                 }
-                connection.zAdd(keySetName, 0 , keyBytes);
+                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
+                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
+                connection.eval(redisTemplate.getKeySerializer().serialize(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
+                //connection.hMSet(ID_KEY_MAP_NAME, buildIDKeyMap(entityId, keyBytes));
+                connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
         });
@@ -218,9 +262,9 @@ public class RedisCache implements Cache{
 
     }
 
-    private List<byte[]> getKey(Set<Object> keySet) {
-        List<byte[]> keyBytes = new ArrayList<>(keySet.size());
-        for (Object key : keySet) {
+    private List<byte[]> getKey(Object ... keys) {
+        List<byte[]> keyBytes = new ArrayList<>(keys.length);
+        for (Object key : keys) {
             keyBytes.add(getKey(key));
         }
         return keyBytes;
@@ -229,7 +273,7 @@ public class RedisCache implements Cache{
     private byte[] getKey(Object key) {
         byte[] keyBytes = null;
         if ( getConfiguration().getKeyType().equals(String.class) ) {
-            keyBytes = convertToByteIfNecessary(cachePrefix + prefix + "." + key.toString() , redisTemplate.getKeySerializer());
+            keyBytes = convertToByteIfNecessary(cacheGlobalPrefix + "." + name + "." + key.toString() , redisTemplate.getKeySerializer());
         }
         if ( keyBytes == null ) {
             keyBytes = convertToByteIfNecessary(key, redisTemplate.getKeySerializer());
