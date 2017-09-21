@@ -1,8 +1,11 @@
 package net.zdsoft.cache;
 
 import net.zdsoft.cache.configuration.CacheConfiguration;
-import org.springframework.cache.CacheManager;
+import net.zdsoft.cache.configuration.ValueTransfer;
 
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -17,9 +20,14 @@ public interface Cache {
 
     Object getNativeCache();
 
-    Object get(Object key);
+    /**
+     * 原始缓存对象，String
+     * @param key
+     * @return
+     */
+    Object getNative(Object key);
 
-    <T> T get(Object key, Class<T> type);
+    CacheWrapper get(Object key);
 
     <T> T get(Object key, Callable<T> valueLoader);
 
@@ -29,7 +37,7 @@ public interface Cache {
 
     void put(Set<String> entityId, Object key, Object value, int account, TimeUnit timeUnit);
 
-    Object putIfAbsent(Object key, Object value, Class<?> type);
+    CacheWrapper putIfAbsent(Object key, Object value);
 
     <C extends CacheConfiguration> C getConfiguration();
 
@@ -40,4 +48,26 @@ public interface Cache {
     void removeAll();
 
     void destroy();
+
+    long incrBy(Object key, int value);
+
+    ValueTransfer getTransfer();
+
+    /**
+     * 复杂Map，List请自行转换
+     */
+    interface CacheWrapper {
+
+        <T> T getEntity(Class<T> tClass);
+
+        <K,V> Map<K,V> getMap(Type kType, Type vType);
+
+        <K,V> Map<K,V> getMap(Type genericType);
+
+        <T> List<T> getList(Type tType);
+
+        <T> Set<T> getSet(Type type);
+
+        <T> T get(Type genericType);
+    }
 }

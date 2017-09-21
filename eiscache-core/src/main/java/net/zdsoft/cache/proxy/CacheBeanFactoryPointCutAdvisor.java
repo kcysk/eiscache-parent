@@ -1,6 +1,6 @@
 package net.zdsoft.cache.proxy;
 
-import net.zdsoft.cache.utils.MethodClassKey;
+import net.zdsoft.cache.support.MethodClassKey;
 import net.zdsoft.cache.interceptor.CacheOperationParser;
 import org.apache.log4j.Logger;
 import org.springframework.aop.ClassFilter;
@@ -22,7 +22,7 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
     private Logger logger = Logger.getLogger(CacheBeanFactoryPointCutAdvisor.class);
 
     private CacheOperationParser cacheOperationParser;
-    private Map<MethodClassKey, String> isInterceptorMap = new ConcurrentHashMap<>();
+    private Map<MethodClassKey, String> isInterceptorMap = new ConcurrentHashMap<MethodClassKey, String>();
 
     public static final String UN_KNOWN = "un_known";
     public static final String INTERCEPT_YES = "interceptor_yes";
@@ -30,6 +30,10 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
 
     private Pointcut pointcut = new CachePointCut();
     private ClassFilter classFilter;
+
+    public CacheBeanFactoryPointCutAdvisor() {
+
+    }
 
     @Override
     public Pointcut getPointcut() {
@@ -86,15 +90,7 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
 
         @Override
         public ClassFilter getClassFilter() {
-            return this.classFilter;
+            return CacheBeanFactoryPointCutAdvisor.this.classFilter;
         }
-        private ClassFilter classFilter = new ClassFilter() {
-            @Override
-            public boolean matches(Class<?> clazz) {
-
-                return clazz.getName().equals("net.zdsoft.basedata.service.impl.UserServiceImpl")
-                        || clazz.getName().equals("net.zdsoft.basedata.service.impl.TeacherServiceImpl");
-            }
-        };
     }
 }

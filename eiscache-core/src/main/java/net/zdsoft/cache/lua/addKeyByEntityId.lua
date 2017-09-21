@@ -12,6 +12,6 @@ if ( count > 0 ) then
     for index, entityId in ipairs(entityIds)  --遍历entityId， 更新key
         do
         redis.call('SADD', '#ID_KEY_PREFIX'..entityId, KEYS[1]);
-    end
-end
+    end;
+end;
 return count;

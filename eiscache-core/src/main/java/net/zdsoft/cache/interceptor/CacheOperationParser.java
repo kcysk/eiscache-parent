@@ -1,7 +1,7 @@
 package net.zdsoft.cache.interceptor;
 
 import net.zdsoft.cache.utils.BeanUtils;
-import net.zdsoft.cache.utils.MethodClassKey;
+import net.zdsoft.cache.support.MethodClassKey;
 import net.zdsoft.cache.annotation.CacheDefault;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.annotation.CacheRemove;
@@ -19,7 +19,7 @@ import java.util.*;
  */
 final public class CacheOperationParser {
 
-    private Map<MethodClassKey, Collection<CacheOperation>> cached = new HashMap<>();
+    private Map<MethodClassKey, Collection<CacheOperation>> cached = new HashMap<MethodClassKey, Collection<CacheOperation>>();
 
     private static final Collection<CacheOperation> EMPTY = Collections.emptyList();
 
@@ -36,7 +36,7 @@ final public class CacheOperationParser {
         if ( cacheOperations != null && cacheOperations.size() > 0) {
             return cacheOperations;
         }
-        cacheOperations = new ArrayList<>();
+        cacheOperations = new ArrayList<CacheOperation>();
 
         CacheDefault cacheDefault = getCacheDefault(targetClass);
 
@@ -94,13 +94,13 @@ final public class CacheOperationParser {
 
     public List<Class<?>> getSupperClasses(Class<?> targetClass) {
         if ( targetClass.isInterface() ) {
-            return new ArrayList<>();
+            return new ArrayList<Class<?>>();
         }
         Class<?> parentClass = targetClass.getSuperclass();
         if ( Object.class.equals(parentClass) ) {
             return Collections.emptyList();
         }
-        List<Class<?>> parentClassList = new ArrayList<>();
+        List<Class<?>> parentClassList = new ArrayList<Class<?>>();
         parentClassList.add(parentClass);
         parentClassList.addAll(getSupperClasses(parentClass));
         return parentClassList;
@@ -109,7 +109,7 @@ final public class CacheOperationParser {
     public List<Class<?>> getInterfaces(Class<?> targetClass) {
         if ( targetClass.isInterface() ) {
             Class<?>[] interfaces = targetClass.getInterfaces();
-            List<Class<?>> interfaceList = new ArrayList<>();
+            List<Class<?>> interfaceList = new ArrayList<Class<?>>();
             if ( interfaces != null && interfaces.length != 0 ) {
                 interfaceList.addAll(Arrays.asList(interfaces));
                 for (Class<?> aClass : interfaces) {
@@ -118,7 +118,7 @@ final public class CacheOperationParser {
             }
             return interfaceList;
         } else {
-            List<Class<?>> interfaceList = new ArrayList<>();
+            List<Class<?>> interfaceList = new ArrayList<Class<?>>();
             Class<?>[] interfaces = targetClass.getInterfaces();
             if ( interfaces != null && interfaces.length != 0 ) {
                 interfaceList.addAll(Arrays.asList(interfaces));

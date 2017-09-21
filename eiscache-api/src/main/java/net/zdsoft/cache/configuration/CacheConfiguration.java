@@ -13,5 +13,5 @@ public interface CacheConfiguration<K> extends Configuration<K> {
 
     <E extends ExpiryPolicy> E getExpiry();
 
-    <S, T> ValueTransfer<S, T> getValueTransfer();
+    ValueTransfer getValueTransfer();
 }

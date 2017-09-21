@@ -22,3 +22,4 @@ if ( count > 0 ) then
         redis.call('DEL', '#ID_KEY_PREFIX'..entityId); -- 删除存放key的缓存
     end;
 end;
+-- return count;

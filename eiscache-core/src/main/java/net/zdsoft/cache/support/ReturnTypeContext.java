@@ -1,4 +1,6 @@
-package net.zdsoft.cache.utils;
+package net.zdsoft.cache.support;
+
+import java.lang.reflect.Type;
 
 /**
  * @author shenke
@@ -6,10 +8,9 @@ package net.zdsoft.cache.utils;
  */
 public class ReturnTypeContext {
 
-    private static ThreadLocal<Class<?>> entityTypeLocal = new ThreadLocal<>();
+    private static ThreadLocal<Class<?>> entityTypeLocal = new ThreadLocal<Class<?>>();
 
-    private static ThreadLocal<Class<?>> returnTypeLocal = new ThreadLocal<>();
-
+    private static ThreadLocal<Type> returnTypeLocal = new ThreadLocal<Type>();
 
     public static Class<?> getEntityType() {
         return entityTypeLocal.get();
@@ -23,11 +24,11 @@ public class ReturnTypeContext {
         entityTypeLocal.remove();
     }
 
-    public static Class<?> getReturnType() {
+    public static Type getReturnType() {
         return returnTypeLocal.get();
     }
 
-    public static void registerReturnType(Class<?> returnType) {
+    public static void registerReturnType(Type returnType) {
         returnTypeLocal.set(returnType);
     }
 

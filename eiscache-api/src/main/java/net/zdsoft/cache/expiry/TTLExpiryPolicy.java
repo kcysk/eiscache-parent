@@ -27,4 +27,11 @@ public class TTLExpiryPolicy implements ExpiryPolicy {
         return this.duration;
     }
 
+    @Override
+    public boolean expire(Duration duration, long creation) {
+        if ( duration == Duration.NEVER ) {
+            return false;
+        }
+        return System.currentTimeMillis() - creation > duration.toSeconds();
+    }
 }

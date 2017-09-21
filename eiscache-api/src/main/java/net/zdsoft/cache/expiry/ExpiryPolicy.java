@@ -7,12 +7,7 @@ package net.zdsoft.cache.expiry;
  */
 public interface ExpiryPolicy {
 
-    default boolean expire(Duration duration, long creation) {
-        if ( duration == Duration.NEVER ) {
-            return false;
-        }
-        return System.currentTimeMillis() - creation > duration.toSeconds();
-    }
+    boolean expire(Duration duration, long creation);
 
     Duration getAccessExpire();
 

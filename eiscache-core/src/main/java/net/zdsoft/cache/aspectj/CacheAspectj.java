@@ -39,7 +39,7 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
 
     @Around(value = "executionAnyPublicMethodWithCacheable() || executionAnyPublicMethodWithCacheClear() || executeJPAQuery()")
-    public Object executeCacheAround(ProceedingJoinPoint joinPoint){
+    public Object executeCacheAround(final ProceedingJoinPoint joinPoint){
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
 

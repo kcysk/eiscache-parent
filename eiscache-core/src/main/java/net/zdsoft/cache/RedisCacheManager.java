@@ -1,14 +1,18 @@
 package net.zdsoft.cache;
 
+import net.zdsoft.cache.configuration.ByteTransfer;
 import net.zdsoft.cache.configuration.CacheConfiguration;
 import net.zdsoft.cache.configuration.ValueTransfer;
 import net.zdsoft.cache.expiry.Duration;
 import net.zdsoft.cache.expiry.ExpiryPolicy;
 import net.zdsoft.cache.expiry.TTLExpiryPolicy;
 import net.zdsoft.cache.listener.CacheEventListener;
+import net.zdsoft.cache.support.DefaultByteTransfer;
+import net.zdsoft.cache.support.JSONValueTransfer;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author shenke
@@ -19,6 +23,9 @@ public class RedisCacheManager extends AbstractCacheManager {
     private RedisTemplate redisTemplate;
     private static final String PREFIX_REDIS = "cache";
     private String redisCachePrefix;
+    private static Map<String, String> CACHE_GLOBAL_PREFIX = new ConcurrentHashMap<String, String>();
+    private static final ValueTransfer VALUE_TRANSFER = new JSONValueTransfer();
+    private static final ByteTransfer BYTETR_TANSFER = new DefaultByteTransfer();
 
     public RedisCacheManager(RedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -34,7 +41,8 @@ public class RedisCacheManager extends AbstractCacheManager {
     }
 
     private Cache createAndAdd(String cacheName) {
-        RedisCache cache = new RedisCache(redisTemplate, cacheName, PREFIX_REDIS);
+        CACHE_GLOBAL_PREFIX.put(cacheName, PREFIX_REDIS + "." + cacheName +".");
+        RedisCache cache = new RedisCache(redisTemplate, cacheName, PREFIX_REDIS, BYTETR_TANSFER, VALUE_TRANSFER);
         cache.setCacheConfiguration(getDefaultConfiguration());
         addCache(cache);
         return cache;
@@ -45,20 +53,26 @@ public class RedisCacheManager extends AbstractCacheManager {
         return new Configuration();
     }
 
-    class Configuration implements CacheConfiguration<String> {
+    @Override
+    public String getGlobalPrefix(String cacheName) {
+        return null;
+    }
+
+    class Configuration implements CacheConfiguration{
         ExpiryPolicy expiry = new TTLExpiryPolicy(Duration.NEVER);
+
         @Override
-        public <L extends CacheEventListener> L getListener(Class<L> listenerClass) {
+        public CacheEventListener getListener(Class listenerClass) {
             return null;
         }
 
         @Override
-        public <E extends ExpiryPolicy> E getExpiry() {
-            return (E) expiry;
+        public ExpiryPolicy getExpiry() {
+            return null;
         }
 
         @Override
-        public <S, T> ValueTransfer<S, T> getValueTransfer() {
+        public ValueTransfer getValueTransfer() {
             return null;
         }
 

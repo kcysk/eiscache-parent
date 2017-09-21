@@ -27,7 +27,7 @@ public class CacheConfigurationSelector extends AdviceModeImportSelector<EnableC
     }
 
     private String[] getProxyImport() {
-        List<String> result = new ArrayList<>(2);
+        List<String> result = new ArrayList<String>(2);
         result.add(AutoProxyRegistrar.class.getName());
         result.add("net.zdsoft.cache.proxy.CacheProxyConfiguration");
         return result.toArray(new String[result.size()]);

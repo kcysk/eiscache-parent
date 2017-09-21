@@ -5,7 +5,10 @@ import net.zdsoft.cache.event.CacheEvent;
 import net.zdsoft.cache.event.EventType;
 import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.listener.CacheRemoveListener;
+import net.zdsoft.cache.support.ReturnTypeContext;
+import org.apache.log4j.Logger;
 
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -16,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractCacheInvoker {
 
+    private Logger logger = Logger.getLogger(AbstractCacheInvoker.class);
     protected abstract CacheErrorHanlder getCacheErrorHandler();
 
     protected abstract Collection<CacheEventListener> getCacheEventListener();
@@ -25,6 +29,7 @@ public abstract class AbstractCacheInvoker {
             //CacheEvent cachePutEvent = new CacheableEvent(EventType.CREATE, );
             cache.put(entityId, key, value);
         } catch (RuntimeException e) {
+            e.printStackTrace();
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
     }
@@ -33,13 +38,17 @@ public abstract class AbstractCacheInvoker {
         try {
             cache.put(entityId, key, value, account, timeUnit);
         } catch (RuntimeException e) {
+            e.printStackTrace();
+            logger.error(e);
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
     }
 
     protected Object doGet(Cache cache, Object key, Class<?> returnType) {
         try {
-            return cache.get(key, returnType);
+            Type type = ReturnTypeContext.getReturnType();
+
+            return cache.get(key).get(type);
         } catch (RuntimeException e){
             e.printStackTrace();
             getCacheErrorHandler().doGetError(e, cache, key);
@@ -54,6 +63,7 @@ public abstract class AbstractCacheInvoker {
             notifyListener(cacheEvent);
             cache.remove(entityId, key);  //FIXME 可改为异步处理
         } catch (RuntimeException e){
+            e.printStackTrace();
             getCacheErrorHandler().doRemoveError(e, cache, key);
         }
     }
@@ -62,7 +72,7 @@ public abstract class AbstractCacheInvoker {
         try {
             cache.removeAll();
         } catch (Exception e){
-
+            e.printStackTrace();
         }
     }
 
@@ -70,7 +80,7 @@ public abstract class AbstractCacheInvoker {
         try {
             cache.remove(entityId, keys);
         } catch (RuntimeException e) {
-
+            e.printStackTrace();
         }
     }
 

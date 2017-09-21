@@ -3,9 +3,9 @@ package net.zdsoft.cache.interceptor;
 import net.zdsoft.cache.utils.BeanUtils;
 import net.zdsoft.cache.Cache;
 import net.zdsoft.cache.CacheManager;
-import net.zdsoft.cache.DefaultErrorHandler;
+import net.zdsoft.cache.support.DefaultErrorHandler;
 import net.zdsoft.cache.Invoker;
-import net.zdsoft.cache.utils.MethodClassKey;
+import net.zdsoft.cache.support.MethodClassKey;
 import net.zdsoft.cache.core.CacheOperation;
 import net.zdsoft.cache.core.InvocationContext;
 import net.zdsoft.cache.core.support.CacheRemoveOperation;
@@ -13,6 +13,7 @@ import net.zdsoft.cache.core.support.CacheableOperation;
 import net.zdsoft.cache.expression.CacheEvaluationContext;
 import net.zdsoft.cache.expression.CacheExpressionEvaluator;
 import net.zdsoft.cache.listener.CacheEventListener;
+import net.zdsoft.cache.support.ReturnTypeContext;
 import org.apache.log4j.Logger;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeansException;
@@ -29,7 +30,6 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,7 +55,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     private ApplicationContext applicationContext;
     private AdviceMode activeModel;
 
-    private Map<MethodClassKey, Boolean> NO_KEY_CACHE = new ConcurrentHashMap<>();
+    private Map<MethodClassKey, Boolean> NO_KEY_CACHE = new ConcurrentHashMap<MethodClassKey, Boolean>();
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -144,6 +144,9 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return invoker.invoke();
         } catch (Throwable throwable) {
             throw new Invoker.ThrowableWrapper(throwable);
+        } finally {
+            ReturnTypeContext.removeEntityType();
+            ReturnTypeContext.removeReturnType();
         }
     }
 
@@ -229,7 +232,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         private Map<Class<? extends CacheOperation>, CacheInvocationContext> invocationContextMap ;
 
         public CacheInvocationContexts(Collection<CacheOperation> cacheOperations, Object target, Method method, Object[] args, Class<?> returnType) {
-            invocationContextMap = new HashMap<>();
+            invocationContextMap = new HashMap<Class<? extends CacheOperation>, CacheInvocationContext>();
             for (CacheOperation cacheOperation : cacheOperations) {
                 CacheInvocationContext invocationContext = new CacheInvocationContext(target, method, args, returnType, cacheOperation);
                 if ( cacheOperation instanceof CacheableOperation) {

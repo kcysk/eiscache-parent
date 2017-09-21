@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractCacheManager implements CacheManager , InitializingBean{
 
-    private Map<String, Cache> cacheMap = new ConcurrentHashMap<>(16);
+    private Map<String, Cache> cacheMap = new ConcurrentHashMap<String, Cache>(16);
 
     @Override
     public Cache getCache(String cacheName) {

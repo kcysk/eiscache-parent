@@ -10,7 +10,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -19,28 +23,76 @@ import java.util.Set;
  */
 public class BeanUtils {
 
-    public static final <T, O> Set<T> getId(Collection<O> os) {
+    public static final Set<Class<?>> NATIVE_TYPE = new HashSet<Class<?>>(){{
+        add(int.class);
+        add(Integer.class);
+        add(float.class);
+        add(Float.class);
+        add(char.class);
+        add(Character.class);
+        add(double.class);
+        add(Double.class);
+        add(String.class);
+        add(boolean.class);
+        add(Boolean.class);
+    }};
+
+    public static final Set<Class<?>> NATIVE_COLLECTION_TYPE = new HashSet<Class<?>>(){{
+        add(Set.class);
+        add(List.class);
+        add(ArrayList.class);
+        add(HashSet.class);
+        add(Map.class);
+    }};
+
+    public static final <T, O> List<T> getId(List<O> os) {
         ExpressionParser parser = new SpelExpressionParser();
         EvaluationContext context = new StandardEvaluationContext();
-        context.setVariable("collection", os);
-        return parser.parseExpression("#collection.![#this.id]").getValue(context, Set.class);
+        context.setVariable("list", os);
+        return parser.parseExpression("#list.![#this.id]").getValue(context, List.class);
     }
-
+    
     public static final Object getId(Object obj) {
         try {
-            Field ID = obj.getClass().getField("id");
-            if ( ID != null ) {
-                ID.setAccessible(true);
-                return ID.get(obj);
-            }
-            return null;
+            ExpressionParser parser = new SpelExpressionParser();
+            EvaluationContext context = new StandardEvaluationContext();
+            context.setVariable("obj", obj);
+            return parser.parseExpression("#obj.id").getValue(context, String.class);
         } catch (Exception e) {
             return null;
         }
     }
 
+    public static <T> T getGeneric(Class<T> tClass) {
+        if ( tClass == null ) {
+            throw new IllegalArgumentException("tClass is null");
+        }
+        try {
+            return tClass.newInstance();
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
     public static  <O,E> Class<O> getGenericType(Class<E> eClass, int number) {
+
         Type type = eClass.getGenericSuperclass();
+        if ( Object.class.equals(type) ) {
+            Type[] types = eClass.getGenericInterfaces();
+            if ( types != null ) {
+                for (Type type1 : types) {
+                    if ( type1 instanceof ParameterizedType ) {
+                        Type[] argumentTypes = ((ParameterizedType)type1).getActualTypeArguments();
+                        if ( number > argumentTypes.length ){
+                            break;
+                        } else {
+                            return (Class<O>) argumentTypes[number-1];
+                        }
+                    }
+                }
+            }
+            return null;
+        }
         Type[] types = ((ParameterizedType)type).getActualTypeArguments();
         if ( ArrayUtils.isEmpty(types) ) {
             return null;
@@ -52,6 +104,7 @@ public class BeanUtils {
     }
 
     public static <O,E> Class<O> getFirstGenericType(Class<E> eClass) {
+
         return getGenericType(eClass, 1);
     }
 
@@ -61,5 +114,25 @@ public class BeanUtils {
         } catch (NoSuchMethodException e) {
             return null;
         }
+    }
+
+    public static Class<?> getRowType(Type type) {
+        if ( type instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType)type).getRawType();
+        }
+        return (Class<?>) type;
+    }
+
+    public static List<Type> getActualTypeArguments(Type type) {
+        List<Type> typeArguments = new ArrayList<Type>();
+        if ( type instanceof ParameterizedType) {
+            Type[] types = ((ParameterizedType)type).getActualTypeArguments();
+            if ( types != null ) {
+                for (Type t : types) {
+                    typeArguments.add(t);
+                }
+            }
+        }
+        return typeArguments;
     }
 }

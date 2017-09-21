@@ -13,4 +13,6 @@ public interface CacheManager {
     Cache getCache(String cacheName);
 
     void destroy(String cacheName);
+
+    String getGlobalPrefix(String cacheName);
 }
