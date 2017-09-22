@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Cacheable {
 
+    /**
+     * 用于区分属于哪个缓存
+     * @see CacheDefault
+     */
     String cacheName() default "";
 
     /**

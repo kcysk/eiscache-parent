@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -340,11 +341,18 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 return Collections.EMPTY_SET;
             }
             EvaluationContext context = buildContext(result);
-            Set<String> entityIds = evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
+            Set<Object> entityIds = evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
             if ( logger.isDebugEnabled() ) {
                 //logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new String[entityIds.size()])));
             }
-            return entityIds;
+            Set<String> idSet = new HashSet<String>();
+            if ( entityIds != null && entityIds.isEmpty())
+            for (Object id : entityIds) {
+                if ( id != null ) {
+                    idSet.add(id.toString());
+                }
+            }
+            return idSet;
         }
 
         @Override

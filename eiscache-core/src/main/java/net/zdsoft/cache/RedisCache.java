@@ -35,8 +35,12 @@ public class RedisCache implements Cache{
 
     /**详细说明参见addKeyByEntityId.lua*/
     private String ADD_ID_KEY = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do redis.call('SADD', '#ID_KEY_PREFIX'..entityId, KEYS[1]); end; end;return count;";
+    private static final String ADD_ID_KEY_SCRIPT = "local entityIdArray=ARGV[1]; local entityIds = loadstring(\"return \"..entityIdArray)(); local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do redis.call('SADD', ARGV[2]..entityId, KEYS[1]); end; end;return count;";
     /**详细说明参见net/zdsoft/cache/lua/delKeyByEntityId.lua*/
     private String DEL_BY_ENTITYIDS = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do local allKey = redis.call('SMEMBERS', '#ID_KEY_PREFIX'..entityId); if ( #allKey > 0 ) then for k,val in ipairs(allKey) do redis.call('DEL', val); redis.call('ZREM','#KEY_SET_NAME', val); end; end; redis.call('DEL', '#ID_KEY_PREFIX'..entityId); end; end; ";
+
+
+
     /**自增操作，需给定指定步长，若key不存在返回-1*/
     private static final String INCR_BY_NOT_KEY_ERROR = "local existsKey = redis.call('EXISTS', KEYS[1]);if ( existsKey > 0 ) then return redis.call('INCRBY', KEYS[1], ARGV[1]); else return -1;end;";
     private static final String PUT_IF_ABSENT = "local existsKey = redis.call('EXISTS', KEYS[1]); if ( existsKey == 0 ) then return redis.call('SET', KEYS[1], ARGV[1]); else return redis.call('GET', KEYS[1]); end;";
@@ -116,7 +120,8 @@ public class RedisCache implements Cache{
             return "";
         }
         StringBuilder luaArray = new StringBuilder("");
-        for (String id : entityIds) {
+        for (Object id : entityIds) {
+            if ( id != null )
             luaArray.append("\"").append(id).append("\",");
         }
         luaArray.replace(luaArray.length()-1, luaArray.length(), "");
@@ -186,11 +191,24 @@ public class RedisCache implements Cache{
                 connection.set(keyBytes, byteTransfer.transfer(valueTransfer.transfer(value)));
                 String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
                         .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
-                connection.eval(byteTransfer.transfer(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key), byteTransfer.transfer(buildEntityIdsArgv(entityId)), byteTransfer.transfer(ID_KEY_PREFIX));
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
         });
+    }
+
+    private String buildEntityIdsArgv(Set<String> ids) {
+        if ( ids == null || ids.isEmpty() ) {
+            return "{}";
+        }
+        StringBuilder argvBuilder = new StringBuilder();
+        argvBuilder.append("{");
+        for (String id : ids) {
+            argvBuilder.append("\"").append(id).append("\",");
+        }
+        argvBuilder.append("}");
+        return argvBuilder.toString();
     }
 
     @Override

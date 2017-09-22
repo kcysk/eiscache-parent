@@ -8,12 +8,16 @@ import java.lang.reflect.Type;
  * @since 2017.09.21
  */
 public class TypeBuilder {
+    private ParameterizedType type;
     public static TypeBuilder build() {
         return new TypeBuilder();
     }
 
     public ParameterizedType returnType() {
-        return new ParameterizedType() {
+        if ( type != null ) {
+            return type;
+        }
+        type = new ParameterizedType() {
             @Override
             public Type[] getActualTypeArguments() {
                 return TypeBuilder.this.actualTypeArguments;
@@ -53,6 +57,7 @@ public class TypeBuilder {
                 return ts.toString();
             }
         };
+        return type;
     }
 
     public TypeBuilder buildRowType(Type rowType) {
