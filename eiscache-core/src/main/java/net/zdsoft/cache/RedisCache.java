@@ -34,20 +34,16 @@ public class RedisCache implements Cache{
     private Logger logger = Logger.getLogger(RedisCache.class);
 
     /**详细说明参见addKeyByEntityId.lua*/
-    private String ADD_ID_KEY = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do redis.call('SADD', '#ID_KEY_PREFIX'..entityId, KEYS[1]); end; end;return count;";
     private static final String ADD_ID_KEY_SCRIPT = "local entityIdArray=ARGV[1]; local entityIds = loadstring(\"return \"..entityIdArray)(); local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do redis.call('SADD', ARGV[2]..entityId, KEYS[1]); end; end;return count;";
     /**详细说明参见net/zdsoft/cache/lua/delKeyByEntityId.lua*/
-    private String DEL_BY_ENTITYIDS = "local entityIds = {#ENTITY_IDS}; local count = #entityIds; if ( count > 0 ) then for index, entityId in ipairs(entityIds) do local allKey = redis.call('SMEMBERS', '#ID_KEY_PREFIX'..entityId); if ( #allKey > 0 ) then for k,val in ipairs(allKey) do redis.call('DEL', val); redis.call('ZREM','#KEY_SET_NAME', val); end; end; redis.call('DEL', '#ID_KEY_PREFIX'..entityId); end; end; ";
-
+    private static final String DEL_KEY_BY_IDS = "local entity_id_table = ARGV[1]; local entity_ids = loadstring(\"return \"..entity_id_table)(); local id_key_prefix = ARGV[2]; local key_set_name = ARGV[3]; local desc_key_table = ARGV[3]; local desc_keys = loadstring(\"return \"..entity_id_table)(); local count = #entity_ids;\n" +
+            "if ( count > 0 ) then for index, entityId in ipairs(entity_ids) do local allKey = redis.call('SMEMBERS', id_key_prefix..entityId); if ( #allKey > 0 ) then for _, val in ipairs(allKey) do redis.call('DEL', val); redis.call('ZREM', key_set_name, val); end; end; redis.call('DEL', id_key_prefix..entityId); end; end;\n" +
+            "if ( #desc_keys > 0 ) then for _, key in ipairs(desc_keys) do redis.call('DEL', key); end; end; return count + #desc_keys;";
 
 
     /**自增操作，需给定指定步长，若key不存在返回-1*/
     private static final String INCR_BY_NOT_KEY_ERROR = "local existsKey = redis.call('EXISTS', KEYS[1]);if ( existsKey > 0 ) then return redis.call('INCRBY', KEYS[1], ARGV[1]); else return -1;end;";
     private static final String PUT_IF_ABSENT = "local existsKey = redis.call('EXISTS', KEYS[1]); if ( existsKey == 0 ) then return redis.call('SET', KEYS[1], ARGV[1]); else return redis.call('GET', KEYS[1]); end;";
-
-    private static final String R_ENTITY_IDS = "#ENTITY_IDS";
-    private static final String R_ID_KEY_PREFIX = "#ID_KEY_PREFIX";
-
 
     private CacheConfiguration cacheConfiguration;
     private String name;
@@ -59,7 +55,7 @@ public class RedisCache implements Cache{
     private ValueTransfer valueTransfer;
 
     private byte[] KEY_SET_NAME;
-    private String ID_KEY_PREFIX;
+    private byte[] ID_KEY_PREFIX;
 
     public RedisCache(RedisTemplate redisTemplate, String name, String cacheGlobalPrefix, ByteTransfer byteTransfer, ValueTransfer valueTransfer) {
         this.byteTransfer = byteTransfer;
@@ -69,7 +65,7 @@ public class RedisCache implements Cache{
         this.cacheGlobalPrefix = cacheGlobalPrefix;
         this.KEY_SET_NAME = byteTransfer.transfer(cacheGlobalPrefix+ "." + name + "<~>keys");
         this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ this.cacheGlobalPrefix + "." + name +".*')))";;
-        ID_KEY_PREFIX = cacheGlobalPrefix + "." + name + ".id-key.";
+        ID_KEY_PREFIX = byteTransfer.transfer(cacheGlobalPrefix + "." + name + ".id-key.");
     }
 
     @Override
@@ -105,11 +101,8 @@ public class RedisCache implements Cache{
                     return null;
                 }
                 connection.del(getKey(key));
-                String delScript = DEL_BY_ENTITYIDS.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
-                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX)
-                        .replace("#KEY_SET_NAME", cacheGlobalPrefix + "." + name + "<~>keys");
-                delScript += "redis.call('DEL',KEYS[1]); return count;";
-                connection.eval(byteTransfer.transfer(delScript), ReturnType.INTEGER, 1, getKey(key == null ? "null" : key));
+                connection.eval(byteTransfer.transfer(DEL_KEY_BY_IDS), ReturnType.INTEGER, 0,
+                        buildEntityIdsArgv(entityId), ID_KEY_PREFIX, KEY_SET_NAME, buildKeyArv(key));
                 return null;
             }
         },true);
@@ -133,27 +126,12 @@ public class RedisCache implements Cache{
         redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                //connection.del(getKey(keys).toArray(new byte[0][]));
                 if ( entityId == null || entityId.isEmpty() ) {
                     connection.del(getKey(keys).toArray(new byte[keys.length][]));
                     return null;
                 }
-                String delScript = DEL_BY_ENTITYIDS.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
-                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX)
-                        .replace("#KEY_SET_NAME", cacheGlobalPrefix + "." + name + "<~>keys");
-                StringBuilder scriptBuffer = new StringBuilder(delScript);
-                scriptBuffer.append("\"redis.call('DEL',");
-                int index = 1;
-                for (Object key : keys) {
-                    scriptBuffer.append("ARGV[1]");
-                    if ( index != keys.length ) {
-                        scriptBuffer.append(",");
-                        index ++;
-                    } else {
-                        scriptBuffer.append(");return count;");
-                    }
-                }
-                connection.eval(byteTransfer.transfer(scriptBuffer.toString()), ReturnType.INTEGER, index, getKey(keys).toArray(new byte[index][]));
+                connection.eval(byteTransfer.transfer(DEL_KEY_BY_IDS), ReturnType.INTEGER, 0,
+                        buildEntityIdsArgv(entityId), ID_KEY_PREFIX, KEY_SET_NAME, buildKeyArv(keys));
                 return null;
             }
         });
@@ -189,18 +167,17 @@ public class RedisCache implements Cache{
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.set(keyBytes, byteTransfer.transfer(valueTransfer.transfer(value)));
-                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
-                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
-                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key), byteTransfer.transfer(buildEntityIdsArgv(entityId)), byteTransfer.transfer(ID_KEY_PREFIX));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1,
+                        getKey(key), buildEntityIdsArgv(entityId), ID_KEY_PREFIX);
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
         });
     }
 
-    private String buildEntityIdsArgv(Set<String> ids) {
+    private byte[] buildEntityIdsArgv(Set<String> ids) {
         if ( ids == null || ids.isEmpty() ) {
-            return "{}";
+            return byteTransfer.transfer("{}");
         }
         StringBuilder argvBuilder = new StringBuilder();
         argvBuilder.append("{");
@@ -208,7 +185,19 @@ public class RedisCache implements Cache{
             argvBuilder.append("\"").append(id).append("\",");
         }
         argvBuilder.append("}");
-        return argvBuilder.toString();
+        return byteTransfer.transfer(argvBuilder.toString());
+    }
+
+    private byte[] buildKeyArv(Object ... keys) {
+        StringBuffer keyArgv = new StringBuffer();
+        keyArgv.append("{");
+        if ( keys != null ) {
+            for (Object key : keys) {
+                keyArgv.append("\"").append(valueTransfer.transfer(key)).append("\",");
+            }
+        }
+        keyArgv.append("}");
+        return byteTransfer.transfer(keyArgv.toString());
     }
 
     @Override
@@ -218,10 +207,7 @@ public class RedisCache implements Cache{
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.setEx(keyBytes, seconds, byteTransfer.transfer(valueTransfer.transfer(value)));
-                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
-                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
-                connection.eval(byteTransfer.transfer(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
-                //connection.hMSet(ID_KEY_MAP_NAME, buildIDKeyMap(entityId, keyBytes));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
@@ -243,9 +229,7 @@ public class RedisCache implements Cache{
                 } else {
                     connection.setEx(keyBytes, timeUnit.toSeconds(account), byteTransfer.transfer(valueTransfer.transfer(value)));
                 }
-                String addIDKeyScript = ADD_ID_KEY.replace(R_ENTITY_IDS, buildEntityIds2LuaArray(entityId))
-                        .replace(R_ID_KEY_PREFIX, ID_KEY_PREFIX);
-                connection.eval(byteTransfer.transfer(addIDKeyScript), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
@@ -268,7 +252,8 @@ public class RedisCache implements Cache{
         Object result = redisTemplate.execute(new RedisCallback() {
             @Override
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.eval(byteTransfer.transfer(PUT_IF_ABSENT), ReturnType.STATUS, 1, getKey(key), byteTransfer.transfer(valueTransfer.transfer(value)));
+                return connection.eval(byteTransfer.transfer(PUT_IF_ABSENT), ReturnType.STATUS, 1,
+                        getKey(key), byteTransfer.transfer(valueTransfer.transfer(value)));
             }
         });
         if ( result instanceof byte[] ) {

@@ -346,7 +346,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 //logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new String[entityIds.size()])));
             }
             Set<String> idSet = new HashSet<String>();
-            if ( entityIds != null && entityIds.isEmpty())
+            if ( entityIds != null && !entityIds.isEmpty())
             for (Object id : entityIds) {
                 if ( id != null ) {
                     idSet.add(id.toString());

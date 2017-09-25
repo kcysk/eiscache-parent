@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,33 +75,49 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * FIXME error
+     * @param eClass
+     * @param number
+     * @param <O>
+     * @param <E>
+     * @return
+     */
     public static  <O,E> Class<O> getGenericType(Class<E> eClass, int number) {
 
-        Type type = eClass.getGenericSuperclass();
-        if ( Object.class.equals(type) ) {
-            Type[] types = eClass.getGenericInterfaces();
-            if ( types != null ) {
-                for (Type type1 : types) {
-                    if ( type1 instanceof ParameterizedType ) {
-                        Type[] argumentTypes = ((ParameterizedType)type1).getActualTypeArguments();
-                        if ( number > argumentTypes.length ){
-                            break;
-                        } else {
-                            return (Class<O>) argumentTypes[number-1];
+        try {
+            Type type = eClass.getGenericSuperclass();
+            if ( Object.class.equals(type) ) {
+                Type[] types = eClass.getGenericInterfaces();
+                if ( types != null ) {
+                    for (Type type1 : types) {
+                        if ( type1 instanceof ParameterizedType ) {
+                            Type[] argumentTypes = ((ParameterizedType)type1).getActualTypeArguments();
+                            if ( number > argumentTypes.length ){
+                                break;
+                            } else {
+                                if ( argumentTypes[number-1] instanceof TypeVariable ) {
+                                    return null;
+                                }
+                                return (Class<O>) argumentTypes[number-1];
+                            }
                         }
                     }
                 }
+                return null;
             }
-            return null;
+            Type[] types = ((ParameterizedType)type).getActualTypeArguments();
+            if ( ArrayUtils.isEmpty(types) ) {
+                return null;
+            }
+            if ( number > types.length + 1 ) {
+                return (Class<O>) types[types.length-1];
+            }
+            return (Class<O>) types[number-1];
+        } catch (Exception e) {
+
         }
-        Type[] types = ((ParameterizedType)type).getActualTypeArguments();
-        if ( ArrayUtils.isEmpty(types) ) {
-            return null;
-        }
-        if ( number > types.length + 1 ) {
-            return (Class<O>) types[types.length-1];
-        }
-        return (Class<O>) types[number-1];
+        return null;
     }
 
     public static <O,E> Class<O> getFirstGenericType(Class<E> eClass) {
