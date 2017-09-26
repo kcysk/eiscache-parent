@@ -9,8 +9,14 @@ public interface ExpiryPolicy {
 
     boolean expire(Duration duration, long creation);
 
+    /**
+     * 暂时不支持
+     */
     Duration getAccessExpire();
 
+    /**
+     * 暂时不支持
+     */
     Duration getUpdateExpire();
 
     Duration getCreateExpire();

@@ -1,6 +1,6 @@
 package net.zdsoft.cache.support;
 
-import net.zdsoft.cache.Cache;
+import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.interceptor.CacheErrorHanlder;
 
 /**

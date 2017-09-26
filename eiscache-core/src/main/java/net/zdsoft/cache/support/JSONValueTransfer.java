@@ -1,8 +1,7 @@
 package net.zdsoft.cache.support;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
-import net.zdsoft.cache.configuration.ValueTransfer;
+import net.zdsoft.cache.transfer.ValueTransfer;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

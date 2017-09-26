@@ -1,7 +1,6 @@
-package net.zdsoft.cache;
+package net.zdsoft.cache.core;
 
-import net.zdsoft.cache.configuration.CacheConfiguration;
-import net.zdsoft.cache.configuration.ValueTransfer;
+import net.zdsoft.cache.configuration.Configuration;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -18,6 +17,9 @@ public interface Cache {
 
     String getName();
 
+    /**
+     * maybe Jedis or memecache or redisTemplate
+     */
     Object getNativeCache();
 
     /**
@@ -39,7 +41,7 @@ public interface Cache {
 
     CacheWrapper putIfAbsent(Object key, Object value);
 
-    <C extends CacheConfiguration> C getConfiguration();
+    Configuration getConfiguration();
 
     void remove(Set<String> entityId, Object key);
 
@@ -50,8 +52,6 @@ public interface Cache {
     void destroy();
 
     long incrBy(Object key, int value);
-
-    ValueTransfer getTransfer();
 
     /**
      * 复杂Map，List请自行转换

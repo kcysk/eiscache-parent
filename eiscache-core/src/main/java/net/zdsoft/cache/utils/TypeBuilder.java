@@ -41,7 +41,7 @@ public class TypeBuilder {
             }
 
             private String typeToString(Type ... type) {
-                StringBuffer ts = new StringBuffer();
+                StringBuilder ts = new StringBuilder();
                 if ( type != null ) {
                     for (Type t : type) {
                         if ( t != null ){

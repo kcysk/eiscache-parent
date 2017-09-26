@@ -1,4 +1,4 @@
-package net.zdsoft.cache.configuration;
+package net.zdsoft.cache.transfer;
 
 /**
  * @author shenke

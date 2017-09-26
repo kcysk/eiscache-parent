@@ -1,16 +1,17 @@
-package net.zdsoft.cache;
+package net.zdsoft.cache.redis;
 
 import com.alibaba.fastjson.JSON;
-import net.zdsoft.cache.configuration.ByteTransfer;
-import net.zdsoft.cache.configuration.CacheConfiguration;
-import net.zdsoft.cache.configuration.ValueTransfer;
+import net.zdsoft.cache.configuration.Configuration;
+import net.zdsoft.cache.core.Cache;
+import net.zdsoft.cache.expiry.Duration;
+import net.zdsoft.cache.transfer.ByteTransfer;
+import net.zdsoft.cache.transfer.ValueTransfer;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @author shenke
  * @since 2017.09.04
  */
-public class RedisCache implements Cache{
+public class RedisCache implements Cache {
 
     private Logger logger = Logger.getLogger(RedisCache.class);
 
@@ -45,7 +46,7 @@ public class RedisCache implements Cache{
     private static final String INCR_BY_NOT_KEY_ERROR = "local existsKey = redis.call('EXISTS', KEYS[1]);if ( existsKey > 0 ) then return redis.call('INCRBY', KEYS[1], ARGV[1]); else return -1;end;";
     private static final String PUT_IF_ABSENT = "local existsKey = redis.call('EXISTS', KEYS[1]); if ( existsKey == 0 ) then return redis.call('SET', KEYS[1], ARGV[1]); else return redis.call('GET', KEYS[1]); end;";
 
-    private CacheConfiguration cacheConfiguration;
+    private Configuration cacheConfiguration;
     private String name;
     private String cacheGlobalPrefix;
     private RedisTemplate redisTemplate;
@@ -57,14 +58,15 @@ public class RedisCache implements Cache{
     private byte[] KEY_SET_NAME;
     private byte[] ID_KEY_PREFIX;
 
-    public RedisCache(RedisTemplate redisTemplate, String name, String cacheGlobalPrefix, ByteTransfer byteTransfer, ValueTransfer valueTransfer) {
-        this.byteTransfer = byteTransfer;
-        this.valueTransfer = valueTransfer;
+    protected RedisCache(RedisTemplate redisTemplate, String name, String cacheGlobalPrefix, Configuration configuration) {
+        this.cacheConfiguration = configuration;
+        this.byteTransfer = configuration.getByteTransfer();
+        this.valueTransfer = configuration.getValueTransfer();
         this.redisTemplate = redisTemplate;
         this.name = name;
         this.cacheGlobalPrefix = cacheGlobalPrefix;
         this.KEY_SET_NAME = byteTransfer.transfer(cacheGlobalPrefix+ "." + name + "<~>keys");
-        this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ this.cacheGlobalPrefix + "." + name +".*')))";;
+        this.clearScript = "redis.call('del', unpack(redis.call('keys','"+ this.cacheGlobalPrefix + "." + name +".*')))";
         ID_KEY_PREFIX = byteTransfer.transfer(cacheGlobalPrefix + "." + name + ".id-key.");
     }
 
@@ -106,19 +108,6 @@ public class RedisCache implements Cache{
                 return null;
             }
         },true);
-    }
-
-    private String buildEntityIds2LuaArray(Set<String> entityIds) {
-        if ( entityIds == null || entityIds.isEmpty() ) {
-            return "";
-        }
-        StringBuilder luaArray = new StringBuilder("");
-        for (Object id : entityIds) {
-            if ( id != null )
-            luaArray.append("\"").append(id).append("\",");
-        }
-        luaArray.replace(luaArray.length()-1, luaArray.length(), "");
-        return luaArray.toString();
     }
 
     @Override
@@ -189,7 +178,7 @@ public class RedisCache implements Cache{
     }
 
     private byte[] buildKeyArv(Object ... keys) {
-        StringBuffer keyArgv = new StringBuffer();
+        StringBuilder keyArgv = new StringBuilder();
         keyArgv.append("{");
         if ( keys != null ) {
             for (Object key : keys) {
@@ -217,7 +206,12 @@ public class RedisCache implements Cache{
     @Override
     public void put(final Set<String> entityId, final Object key, final Object value, final int account, final TimeUnit timeUnit) {
         if ( account == 0 ) {
-            put(entityId, key, value);
+            if ( Duration.NEVER.equals(getConfiguration().getExpiry().getCreateExpire()) ) {
+                put(entityId, key, value);
+            }
+            else {
+                put(entityId, key, value, getConfiguration().getExpiry().getCreateExpire().toSeconds());
+            }
             return ;
         }
         redisTemplate.execute(new RedisCallback() {
@@ -268,8 +262,8 @@ public class RedisCache implements Cache{
     }
 
     @Override
-    public <C extends CacheConfiguration> C getConfiguration() {
-        return (C) this.cacheConfiguration;
+    public Configuration getConfiguration() {
+        return this.cacheConfiguration;
     }
 
     @Override
@@ -288,11 +282,6 @@ public class RedisCache implements Cache{
         return (Long)val;
     }
 
-    @Override
-    public ValueTransfer getTransfer() {
-        return valueTransfer;
-    }
-
     private List<byte[]> getKey(Object ... keys) {
         List<byte[]> keyBytes = new ArrayList<byte[]>(keys.length);
         for (Object key : keys) {
@@ -304,63 +293,59 @@ public class RedisCache implements Cache{
     private byte[] getKey(Object key) {
         byte[] keyBytes = null;
         if ( getConfiguration().getKeyType().equals(String.class) ) {
-            keyBytes = convertToByteIfNecessary(cacheGlobalPrefix + "." + name + "." + key.toString() , redisTemplate.getKeySerializer());
+            keyBytes = convertToByteIfNecessary(cacheGlobalPrefix + "." + name + "." + key.toString());
         }
         if ( keyBytes == null ) {
-            keyBytes = convertToByteIfNecessary(key, redisTemplate.getKeySerializer());
+            keyBytes = convertToByteIfNecessary(key);
         }
         return keyBytes;
     }
 
-    private byte[] convertToByteIfNecessary (Object key, RedisSerializer serializer) {
+    private byte[] convertToByteIfNecessary (Object key) {
         if ( key != null && key instanceof byte[]) {
             return (byte[]) key;
         }
-        if ( String.class.equals(key.getClass()) ) {
+        if ( key != null && String.class.equals(key.getClass()) ) {
             return byteTransfer.transfer(key.toString());
         }
         return byteTransfer.transfer(valueTransfer.transfer(key));
     }
 
-    public void setCacheConfiguration(CacheConfiguration cacheConfiguration) {
-        this.cacheConfiguration = cacheConfiguration;
-    }
-
     class CacheWrapper implements Cache.CacheWrapper{
         private String value;
 
-        public CacheWrapper(String value) {
+        private CacheWrapper(String value) {
             this.value = value;
         }
 
         public <T> T getEntity(Class<T> tClass) {
-            return RedisCache.this.getTransfer().parseForNative(value, tClass);
+            return getConfiguration().getValueTransfer().parseForNative(value, tClass);
         }
 
         public <K,V> Map<K,V> getMap(Type kClass, Type vClass) {
-            return RedisCache.this.getTransfer().parseFor(value, kClass, vClass);
+            return getConfiguration().getValueTransfer().parseFor(value, kClass, vClass);
         }
 
         public <T> List<T> getList(Type tClass) {
-            return RedisCache.this.getTransfer().parseForList(value, tClass);
+            return getConfiguration().getValueTransfer().parseForList(value, tClass);
         }
 
         public <T> Set<T> getSet(Type tClass) {
-            return RedisCache.this.getTransfer().parseForSet(value, tClass);
+            return getConfiguration().getValueTransfer().parseForSet(value, tClass);
         }
 
         @Override
         public <K, V> Map<K, V> getMap(Type genericType) {
-            return RedisCache.this.getTransfer().parseForNative(value, genericType);
+            return getConfiguration().getValueTransfer().parseForNative(value, genericType);
         }
 
         @Override
         public <T> T get(Type genericType) {
-            return RedisCache.this.getTransfer().parseForNative(value, genericType);
+            return getConfiguration().getValueTransfer().parseForNative(value, genericType);
         }
     }
 
-    public Cache.CacheWrapper buildWrapper(String value) {
+    private Cache.CacheWrapper buildWrapper(String value) {
         return new CacheWrapper(value);
     }
 }

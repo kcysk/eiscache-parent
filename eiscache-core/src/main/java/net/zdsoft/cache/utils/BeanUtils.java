@@ -46,14 +46,14 @@ public class BeanUtils {
         add(Map.class);
     }};
 
-    public static final <T, O> List<T> getId(List<O> os) {
+    public static <T, O> List<T> getId(List<O> os) {
         ExpressionParser parser = new SpelExpressionParser();
         EvaluationContext context = new StandardEvaluationContext();
         context.setVariable("list", os);
         return parser.parseExpression("#list.![#this.id]").getValue(context, List.class);
     }
     
-    public static final Object getId(Object obj) {
+    public static Object getId(Object obj) {
         try {
             ExpressionParser parser = new SpelExpressionParser();
             EvaluationContext context = new StandardEvaluationContext();

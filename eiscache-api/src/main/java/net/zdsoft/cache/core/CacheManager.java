@@ -1,6 +1,6 @@
-package net.zdsoft.cache;
+package net.zdsoft.cache.core;
 
-import net.zdsoft.cache.configuration.CacheConfiguration;
+import net.zdsoft.cache.configuration.Configuration;
 
 /**
  * @author shenke
@@ -8,9 +8,9 @@ import net.zdsoft.cache.configuration.CacheConfiguration;
  */
 public interface CacheManager {
 
-    //<C extends CacheConfiguration> Cache createCache(String name, C configuration);
-
     Cache getCache(String cacheName);
+
+    Cache getCache(String cacheName, Configuration configuration);
 
     void destroy(String cacheName);
 

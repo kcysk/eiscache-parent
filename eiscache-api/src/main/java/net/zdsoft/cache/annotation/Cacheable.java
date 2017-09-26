@@ -1,5 +1,6 @@
 package net.zdsoft.cache.annotation;
 
+import net.zdsoft.cache.core.KeyGenerator;
 import net.zdsoft.cache.expiry.ExpiryPolicy;
 
 import java.lang.annotation.*;
@@ -25,6 +26,10 @@ public @interface Cacheable {
      */
     String key() default "";
 
+    /**
+     * 配合expire一起使用指定时间单位
+     * @see Cacheable#expire()
+     */
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 
     /**
@@ -55,9 +60,23 @@ public @interface Cacheable {
     String condition() default "";
 
     /**
-     *
+     * 该方法没有具体实现
+     * @deprecated 无用字段
      */
     String unless() default "";
 
+    /**
+     * 指定缓存对象的EntityId，支持spring EL <br>
+     * <ul>
+     *     <li>{@code #root.args[0]}</li>
+     *     <li>{@code #result.![#this.id]}</li>
+     * </ul>
+     */
     String entityId() default "";
+
+    /**
+     * 当key通过spring EL 无法满足要求时，可使用该字段指定key发生器<br>
+     * @see KeyGenerator
+     */
+    String keyGenerator() default "";
 }

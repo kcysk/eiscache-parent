@@ -1,5 +1,9 @@
 package net.zdsoft.cache;
 
+import net.zdsoft.cache.configuration.Configuration;
+import net.zdsoft.cache.core.Cache;
+import net.zdsoft.cache.core.CacheManager;
+import net.zdsoft.cache.support.GlobalConfiguration;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
@@ -10,12 +14,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author shenke
  * @since 2017.09.07
  */
-public abstract class AbstractCacheManager implements CacheManager , InitializingBean{
+public abstract class AbstractCacheManager implements CacheManager, InitializingBean{
 
     private Map<String, Cache> cacheMap = new ConcurrentHashMap<String, Cache>(16);
+    private Configuration defaultConfiguration = new GlobalConfiguration();
 
     @Override
     public Cache getCache(String cacheName) {
+        Cache cache = cacheMap.get(cacheName);
+        if ( cache  == null ) {
+            return lookup(cacheName);
+        }
+        return cache;
+    }
+
+    @Override
+    public String getGlobalPrefix(String cacheName) {
+        return null;
+    }
+
+    @Override
+    public Cache getCache(String cacheName, Configuration configuration) {
         Cache cache = cacheMap.get(cacheName);
         if ( cache  == null ) {
             return lookup(cacheName);
@@ -39,6 +58,10 @@ public abstract class AbstractCacheManager implements CacheManager , Initializin
         }
     }
 
+    protected Configuration getDefaultConfiguration() {
+        return this.defaultConfiguration;
+    }
+
     private void initCache() {
         Collection<Cache> caches = loadCache();
         if ( caches != null ) {
@@ -50,7 +73,7 @@ public abstract class AbstractCacheManager implements CacheManager , Initializin
         }
     }
 
-    protected Collection<Cache> loadCache(){
+    private Collection<Cache> loadCache(){
 
         return null;
     }
@@ -61,7 +84,7 @@ public abstract class AbstractCacheManager implements CacheManager , Initializin
         }
     }
 
-    protected Cache lookup(String cacheName) {
+    private Cache lookup(String cacheName) {
         return null;
     }
 }

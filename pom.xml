@@ -14,6 +14,8 @@
     <modules>
         <module>eiscache-api</module>
         <module>eiscache-core</module>
+        <module>eiscache-redis</module>
+        <module>eiscache-memcache</module>
     </modules>
     <packaging>pom</packaging>
 

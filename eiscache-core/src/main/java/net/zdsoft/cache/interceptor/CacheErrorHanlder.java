@@ -1,6 +1,6 @@
 package net.zdsoft.cache.interceptor;
 
-import net.zdsoft.cache.Cache;
+import net.zdsoft.cache.core.Cache;
 
 /**
  * @author shenke

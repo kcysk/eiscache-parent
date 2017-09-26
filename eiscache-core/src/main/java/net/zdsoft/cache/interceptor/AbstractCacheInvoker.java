@@ -1,6 +1,6 @@
 package net.zdsoft.cache.interceptor;
 
-import net.zdsoft.cache.Cache;
+import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.event.CacheEvent;
 import net.zdsoft.cache.event.EventType;
 import net.zdsoft.cache.listener.CacheEventListener;

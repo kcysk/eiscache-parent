@@ -1,7 +1,7 @@
 package net.zdsoft.cache.interceptor;
 
 import net.zdsoft.cache.utils.BeanUtils;
-import net.zdsoft.cache.Invoker;
+import net.zdsoft.cache.core.Invoker;
 import net.zdsoft.cache.support.ReturnTypeContext;
 import net.zdsoft.cache.proxy.TypeDescriptor;
 import org.aopalliance.intercept.MethodInterceptor;

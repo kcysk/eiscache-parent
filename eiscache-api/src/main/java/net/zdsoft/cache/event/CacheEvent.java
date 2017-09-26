@@ -1,6 +1,6 @@
 package net.zdsoft.cache.event;
 
-import net.zdsoft.cache.Cache;
+import net.zdsoft.cache.core.Cache;
 
 import java.util.EventObject;
 

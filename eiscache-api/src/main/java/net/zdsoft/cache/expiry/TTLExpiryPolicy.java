@@ -14,12 +14,12 @@ public class TTLExpiryPolicy implements ExpiryPolicy {
 
     @Override
     public Duration getAccessExpire() {
-        return null;
+        return this.duration;
     }
 
     @Override
     public Duration getUpdateExpire() {
-        return null;
+        return this.duration;
     }
 
     @Override

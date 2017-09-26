@@ -1,4 +1,4 @@
-package net.zdsoft.cache.configuration;
+package net.zdsoft.cache.transfer;
 
 import java.lang.reflect.Type;
 import java.util.List;

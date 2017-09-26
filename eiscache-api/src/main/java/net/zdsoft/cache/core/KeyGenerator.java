@@ -1,4 +1,4 @@
-package net.zdsoft.cache;
+package net.zdsoft.cache.core;
 
 import net.zdsoft.cache.annotation.Cacheable;
 

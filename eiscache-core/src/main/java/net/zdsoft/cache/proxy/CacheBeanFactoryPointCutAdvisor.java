@@ -25,13 +25,13 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
     private Map<MethodClassKey, String> isInterceptorMap = new ConcurrentHashMap<MethodClassKey, String>();
 
     public static final String UN_KNOWN = "un_known";
-    public static final String INTERCEPT_YES = "interceptor_yes";
-    public static final String INTERCEPT_NO = "interceptor_no";
+    private static final String INTERCEPT_YES = "interceptor_yes";
+    private static final String INTERCEPT_NO = "interceptor_no";
 
     private Pointcut pointcut = new CachePointCut();
     private ClassFilter classFilter;
 
-    public CacheBeanFactoryPointCutAdvisor() {
+    CacheBeanFactoryPointCutAdvisor() {
 
     }
 
@@ -40,11 +40,11 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
         return pointcut;
     }
 
-    public void setCacheOperationParser(CacheOperationParser cacheOperationParser) {
+    void setCacheOperationParser(CacheOperationParser cacheOperationParser) {
         this.cacheOperationParser = cacheOperationParser;
     }
 
-    public void setClassFilter(ClassFilter classFilter) {
+    void setClassFilter(ClassFilter classFilter) {
         this.classFilter = classFilter;
     }
 

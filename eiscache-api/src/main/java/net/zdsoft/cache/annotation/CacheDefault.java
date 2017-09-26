@@ -18,4 +18,6 @@ import java.lang.annotation.Target;
 public @interface CacheDefault {
 
     String cacheName() default "";
+
+    String keyGenerator() default "";
 }

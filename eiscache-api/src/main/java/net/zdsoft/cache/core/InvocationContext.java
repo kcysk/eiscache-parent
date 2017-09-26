@@ -1,9 +1,9 @@
 package net.zdsoft.cache.core;
 
-import net.zdsoft.cache.Cache;
 import net.zdsoft.cache.annotation.Cacheable;
 
 import java.lang.reflect.Method;
+import java.util.Set;
 
 /**
  * @author shenke
@@ -39,7 +39,7 @@ public interface InvocationContext<O extends CacheOperation>  {
      */
     Object generateKey(Object result);
 
-    Object entityId(Object result);
+    Set entityId(Object result);
 
     String cacheName();
 }

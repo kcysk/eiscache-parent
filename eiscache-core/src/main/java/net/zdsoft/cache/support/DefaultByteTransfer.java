@@ -1,12 +1,14 @@
 package net.zdsoft.cache.support;
 
+import net.zdsoft.cache.transfer.ByteTransfer;
+
 import java.nio.charset.Charset;
 
 /**
  * @author shenke
  * @since 2017.09.20
  */
-public class DefaultByteTransfer implements net.zdsoft.cache.configuration.ByteTransfer {
+public class DefaultByteTransfer implements ByteTransfer {
 
     private Charset charset = Charset.forName("UTF8");
 
