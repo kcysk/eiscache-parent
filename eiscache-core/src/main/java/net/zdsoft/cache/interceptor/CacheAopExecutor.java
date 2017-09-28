@@ -348,7 +348,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             EvaluationContext context = buildContext(result);
             Set<Object> entityIds = evaluator.getValue(getCacheOperation().getEntityId(), context, Set.class);
             if ( logger.isDebugEnabled() ) {
-                logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new String[entityIds.size()])));
+                logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new Object[entityIds.size()])));
             }
             Set<String> idSet = new HashSet<String>();
             if ( entityIds != null && !entityIds.isEmpty())

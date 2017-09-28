@@ -24,6 +24,11 @@ public class RedisCacheManager extends AbstractCacheManager {
     }
 
     @Override
+    public Cache getCache(String cacheName) {
+        return getCache(cacheName, getConfiguration());
+    }
+
+    @Override
     public Cache getCache(String cacheName, Configuration configuration) {
         Cache cache = super.getCache(cacheName);
         if ( cache == null ) {
@@ -34,7 +39,7 @@ public class RedisCacheManager extends AbstractCacheManager {
 
     private Cache createAndAdd(String cacheName, Configuration configuration) {
         CACHE_GLOBAL_PREFIX.put(cacheName, PREFIX_REDIS + "." + cacheName +".");
-        RedisCache cache = new RedisCache(redisTemplate, cacheName, PREFIX_REDIS, getDefaultConfiguration());
+        RedisCache cache = new RedisCache(redisTemplate, cacheName, PREFIX_REDIS, getConfiguration());
         addCache(cache);
         return cache;
     }

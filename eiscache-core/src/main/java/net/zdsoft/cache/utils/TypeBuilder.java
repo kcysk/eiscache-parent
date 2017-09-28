@@ -61,6 +61,7 @@ public class TypeBuilder {
     }
 
     public TypeBuilder buildRowType(Type rowType) {
+        clearActualType();
         this.rawType = rowType;
         return this;
     }
@@ -71,13 +72,19 @@ public class TypeBuilder {
      * @return
      */
     public TypeBuilder buildOwnerType(Type ownerType) {
+        clearActualType();
         this.ownerType = ownerType;
         return this;
     }
 
     public TypeBuilder buildArgumentType(Type ... actualTypeArguments) {
+        clearActualType();
         this.actualTypeArguments = actualTypeArguments;
         return this;
+    }
+
+    private void clearActualType() {
+        this.type = null;
     }
 
     private Type[] actualTypeArguments;

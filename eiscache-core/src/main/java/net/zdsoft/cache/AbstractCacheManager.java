@@ -18,6 +18,11 @@ public abstract class AbstractCacheManager implements CacheManager, Initializing
 
     private Map<String, Cache> cacheMap = new ConcurrentHashMap<String, Cache>(16);
     private Configuration defaultConfiguration = new GlobalConfiguration();
+    private Configuration configuration;
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     @Override
     public Cache getCache(String cacheName) {
@@ -58,8 +63,8 @@ public abstract class AbstractCacheManager implements CacheManager, Initializing
         }
     }
 
-    protected Configuration getDefaultConfiguration() {
-        return this.defaultConfiguration;
+    protected Configuration getConfiguration() {
+        return this.configuration == null ? this.defaultConfiguration : this.configuration;
     }
 
     private void initCache() {

@@ -1,6 +1,5 @@
 package net.zdsoft.cache.redis;
 
-import com.alibaba.fastjson.JSON;
 import net.zdsoft.cache.configuration.Configuration;
 import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.expiry.Duration;
@@ -134,7 +133,7 @@ public class RedisCache implements Cache {
                 try {
                     connection.eval(byteTransfer.transfer(clearScript), ReturnType.INTEGER, 0, getKey(""));
                 } catch (Exception e) {
-                    logger.error("clear cache " + name + " use lua script error, try again(use jedis client)", e);
+                    logger.error("clear cache " + name + " use lua script error, try again(use del foreach)", e);
                     Set<byte[]> keySets = connection.zRange(KEY_SET_NAME, 0, -1);
                     keySets.add(KEY_SET_NAME);
                     connection.del(keySets.toArray(new byte[keySets.size()][]));
@@ -253,12 +252,12 @@ public class RedisCache implements Cache {
         if ( result instanceof byte[] ) {
             Object returnString = redisTemplate.getKeySerializer().deserialize((byte[]) result);
             if ( "OK".equals(returnString) ) {
-                return new CacheWrapper(JSON.toJSONString(value));
+                return new CacheWrapper(valueTransfer.transfer(value));
             } else {
                 return new CacheWrapper(returnString.toString());
             }
         }
-        return new CacheWrapper(JSON.toJSONString(value));
+        return new CacheWrapper(valueTransfer.transfer(value));
     }
 
     @Override

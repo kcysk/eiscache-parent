@@ -1,8 +1,7 @@
 package net.zdsoft.cache.memcache;
 
+import net.zdsoft.cache.configuration.Configuration;
 import net.zdsoft.cache.core.Cache;
-import net.zdsoft.cache.configuration.CacheConfiguration;
-import net.zdsoft.cache.transfer.ValueTransfer;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -13,6 +12,8 @@ import java.util.concurrent.TimeUnit;
  * @since 2017.09.26
  */
 public class MemcacheCache implements Cache {
+
+    private
 
     @Override
     public String getName() {
@@ -60,7 +61,7 @@ public class MemcacheCache implements Cache {
     }
 
     @Override
-    public <C extends CacheConfiguration> C getConfiguration() {
+    public Configuration getConfiguration() {
         return null;
     }
 
@@ -87,10 +88,5 @@ public class MemcacheCache implements Cache {
     @Override
     public long incrBy(Object key, int value) {
         return 0;
-    }
-
-    @Override
-    public ValueTransfer getTransfer() {
-        return null;
     }
 }
