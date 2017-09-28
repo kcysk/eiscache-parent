@@ -376,6 +376,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             }
             try {
                 context.registerFunction("getFirstGenericType", BeanUtils.class.getMethod("getFirstGenericType", Class.class));
+                context.registerFunction("getArrayHash", BeanUtils.class.getMethod("getArrayHash", Object.class));
             } catch (Exception e){
                 logger.error("注册net.zdsoft.cache.utils.BeanUtils.getFirstGenericType失败", e);
                 throw new Invoker.ThrowableWrapper(e);

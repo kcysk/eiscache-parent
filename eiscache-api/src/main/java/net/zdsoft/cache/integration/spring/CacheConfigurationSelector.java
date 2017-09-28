@@ -1,8 +1,5 @@
 package net.zdsoft.cache.integration.spring;
 
-import net.zdsoft.cache.annotation.EnableCache;
-import org.springframework.context.annotation.AdviceMode;
-import org.springframework.context.annotation.AdviceModeImportSelector;
 import org.springframework.context.annotation.AutoProxyRegistrar;
 
 import java.util.ArrayList;
@@ -12,11 +9,11 @@ import java.util.List;
  * @author shenke
  * @since 2017.08.30
  */
-public class CacheConfigurationSelector extends AdviceModeImportSelector<EnableCache> {
+public class CacheConfigurationSelector extends AdviceImportSelector {
 
     @Override
-    protected String[] selectImports(AdviceMode adviceMode) {
-        if ( AdviceMode.PROXY.equals(adviceMode) ){
+    protected String[] selectImports(Advice advice) {
+        if ( Advice.PROXY.equals(advice) ){
             return getProxyImport();
         }
         return getAspectJImport();

@@ -6,7 +6,6 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -151,5 +150,29 @@ public class BeanUtils {
             }
         }
         return typeArguments;
+    }
+
+    public static final String getArrayHash(Object obj) {
+        if ( obj == null ) {
+            return "null";
+        }
+        int hashCode = 0;
+        if ( obj.getClass().isArray() ) {
+            for (Object o : (Object[]) obj) {
+                if ( o == null ){
+                    continue;
+                }
+                hashCode += o.hashCode();
+            }
+        }
+        if ( obj instanceof Collection ) {
+            for (Object o : (Collection) obj) {
+                if ( o == null ){
+                    continue;
+                }
+                hashCode += o.hashCode();
+            }
+        }
+        return String.valueOf(hashCode);
     }
 }

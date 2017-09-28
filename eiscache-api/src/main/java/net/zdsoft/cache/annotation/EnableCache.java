@@ -1,7 +1,7 @@
 package net.zdsoft.cache.annotation;
 
+import net.zdsoft.cache.integration.spring.Advice;
 import net.zdsoft.cache.integration.spring.CacheConfigurationSelector;
-import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 
@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
 @Import(CacheConfigurationSelector.class)
 public @interface EnableCache {
 
-    AdviceMode mode() default AdviceMode.ASPECTJ;
+    Advice advice() default Advice.NONE;
 
     int order() default Ordered.LOWEST_PRECEDENCE;
 }
