@@ -4,7 +4,7 @@
 
     <groupId>net.zdsoft</groupId>
     <artifactId>eiscache-parent</artifactId>
-    <version>${cache.version}</version>
+    <version>1.0.1-beta</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
