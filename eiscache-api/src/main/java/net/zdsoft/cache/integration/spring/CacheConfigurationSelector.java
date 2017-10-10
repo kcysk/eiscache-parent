@@ -1,6 +1,6 @@
 package net.zdsoft.cache.integration.spring;
 
-import org.springframework.context.annotation.AutoProxyRegistrar;
+import net.zdsoft.cache.annotation.EnableCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
  * @author shenke
  * @since 2017.08.30
  */
-public class CacheConfigurationSelector extends AdviceImportSelector {
+public class CacheConfigurationSelector extends AdviceImportSelector<EnableCache> {
 
     @Override
     protected String[] selectImports(Advice advice) {
@@ -25,7 +25,8 @@ public class CacheConfigurationSelector extends AdviceImportSelector {
 
     private String[] getProxyImport() {
         List<String> result = new ArrayList<String>(2);
-        result.add(AutoProxyRegistrar.class.getName());
+        //result.add(AutoProxyRegistrar.class.getName());
+        //通过DynamicClassFilter控制
         result.add("net.zdsoft.cache.proxy.CacheProxyConfiguration");
         return result.toArray(new String[result.size()]);
     }

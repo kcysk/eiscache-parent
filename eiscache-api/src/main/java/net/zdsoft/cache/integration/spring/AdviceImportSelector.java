@@ -2,22 +2,24 @@ package net.zdsoft.cache.integration.spring;
 
 import net.zdsoft.cache.annotation.EnableCache;
 import org.springframework.context.annotation.ImportSelector;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
+import java.lang.annotation.Annotation;
 import java.util.Map;
 
 /**
  * @author shenke
  * @since 2017.09.28
  */
-public abstract class AdviceImportSelector implements ImportSelector {
+public abstract class AdviceImportSelector<A extends Annotation> implements ImportSelector {
 
     @Override
     public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-        Class<?> annoType = EnableCache.class;
+        Class<?> annoType = GenericTypeResolver.resolveTypeArgument(getClass(), AdviceImportSelector.class);
         AnnotationAttributes attributes = null;
-        Map<String, Object> map = importingClassMetadata.getAnnotationAttributes(annoType.getClass().getName(), false);
+        Map<String, Object> map = importingClassMetadata.getAnnotationAttributes(annoType.getName(), false);
         if ( map == null) {
             //
         }

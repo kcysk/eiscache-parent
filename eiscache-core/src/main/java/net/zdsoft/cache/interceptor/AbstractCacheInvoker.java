@@ -30,6 +30,7 @@ public abstract class AbstractCacheInvoker {
             cache.put(entityId, key, value);
         } catch (RuntimeException e) {
             e.printStackTrace();
+            e.printStackTrace();
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
     }

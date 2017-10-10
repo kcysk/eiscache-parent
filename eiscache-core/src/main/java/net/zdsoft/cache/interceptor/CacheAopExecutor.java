@@ -21,10 +21,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -43,9 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author shenke
  * @since 2017.09.04
  */
-public abstract class CacheAopExecutor extends AbstractCacheInvoker implements ApplicationContextAware, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+public abstract class CacheAopExecutor extends AbstractCacheInvoker implements ApplicationContextAware, BeanFactoryAware, InitializingBean {
 
-    private static final Logger logger = Logger.getLogger(CacheAopExecutor.class);
+    protected Logger logger = Logger.getLogger(CacheAopExecutor.class);
 
     private BeanFactory beanFactory ;
     private CacheExpressionEvaluator evaluator = new CacheExpressionEvaluator(new SpelExpressionParser());
@@ -55,9 +53,23 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     private CacheManager cacheManager;
     private boolean initialized = false;
     private ApplicationContext applicationContext;
-    private AdviceMode activeModel;
+
+    protected long slowCacheTime;
+    protected long slowInvokeTime;
 
     private Map<MethodClassKey, Boolean> NO_KEY_CACHE = new ConcurrentHashMap<MethodClassKey, Boolean>();
+
+    public void setSlowCacheTime(long slowCacheTime) {
+        this.slowCacheTime = slowCacheTime;
+    }
+
+    public void setSlowInvokeTime(long slowInvokeTime) {
+        this.slowInvokeTime = slowInvokeTime;
+    }
+
+    public void setCacheOperationParser(CacheOperationParser cacheOperationParser) {
+        this.cacheOperationParser = cacheOperationParser;
+    }
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -70,6 +82,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         if ( eventListenerMap != null ) {
             listeners = eventListenerMap.values();
         }
+        afterSingletonsInstantiated();
     }
 
     @Override
@@ -77,7 +90,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         this.applicationContext = applicationContext;
     }
 
-    @Override
+
     public void afterSingletonsInstantiated() {
         try {
             this.cacheManager = beanFactory.getBean(CacheManager.class);
@@ -89,7 +102,9 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         } catch (Exception e){
             this.cacheErrorHanlder = new DefaultErrorHandler();
         }
-        this.cacheOperationParser = new CacheOperationParser();
+        if ( this.cacheOperationParser == null ) {
+            this.cacheOperationParser = new CacheOperationParser();
+        }
         this.initialized = true;
         logger.info("eiscache start");
     }
@@ -138,8 +153,13 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
                 //delete cache after invoke method
                 processCacheRemove(contexts.getInvocationContext(CacheRemoveOperation.class), false, result);
+                long time = System.currentTimeMillis() - startTime;
                 if ( logger.isDebugEnabled() ) {
-                    logger.debug("process method " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" + (System.currentTimeMillis() - startTime) + "}ms");
+                    logger.debug("process method " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" + time + "}ms");
+                }
+                //缓存处理慢的方法调用全部日志记录下来
+                if ( time >= slowCacheTime ) {
+                    logger.warn("slow cache operation " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" +time + "}ms");
                 }
                 return result;
             }
@@ -162,6 +182,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             logger.debug("process method " + invocationContext.getTargetClass().getName() + " remove all");
             return ;
         }
+        result = beforeInvocation ? CacheExpressionEvaluator.UN_AVAILABLE : result;
         Cache cache = invocationContext.getCache();
         Object key = invocationContext.generateKey(result);
 
@@ -179,7 +200,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     protected Object getFromCache(CacheInvocationContext invocationContext) {
         if ( invocationContext != null ) {
             Cache cache = invocationContext.getCache();
-            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.NO_RESULT), invocationContext.getReturnType());
+            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.UN_AVAILABLE), invocationContext.getReturnType());
         }
         return null;
     }
@@ -220,10 +241,6 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     @Override
     protected Collection<CacheEventListener> getCacheEventListener() {
         return this.listeners;
-    }
-
-    public void setActiveModel(AdviceMode activeModel) {
-        this.activeModel = activeModel;
     }
 
     private Cache getCache(String cacheName) {

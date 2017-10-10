@@ -20,8 +20,17 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
         Invoker invoker = new Invoker() {
             @Override
             public Object invoke() {
+                long start = System.currentTimeMillis();
                 try {
-                    return invocation.proceed();
+                    Object obj = invocation.proceed();
+                    long time = System.currentTimeMillis() - start;
+                    if ( logger.isDebugEnabled() ) {
+                        logger.debug("invoke method " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
+                    }
+                    if ( time >= slowInvokeTime ) {
+                        logger.warn("invoke method + " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
+                    }
+                    return obj;
                 } catch (Throwable throwable) {
                     throw new ThrowableWrapper(throwable);
                 }

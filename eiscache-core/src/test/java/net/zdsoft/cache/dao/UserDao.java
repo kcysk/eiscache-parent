@@ -1,5 +1,6 @@
 package net.zdsoft.cache.dao;
 
+import net.zdsoft.cache.annotation.Cacheable;
 import net.zdsoft.cache.entity.User;
 import org.springframework.data.jpa.repository.Query;
 
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
  */
 public interface UserDao extends BaseJpaDao<User, String> {
 
+    @Cacheable(key = "tt")
     User findById(String id);
 
 

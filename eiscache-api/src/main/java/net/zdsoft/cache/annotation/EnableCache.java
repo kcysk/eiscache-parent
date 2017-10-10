@@ -12,6 +12,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * spring 版本低于3.1 请使用net.zdsoft.cache.aspectj.EnableAspectj
  * @author shenke
  * @since 2017.09.04
  */

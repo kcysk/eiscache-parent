@@ -31,7 +31,7 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
     private Pointcut pointcut = new CachePointCut();
     private ClassFilter classFilter;
 
-    CacheBeanFactoryPointCutAdvisor() {
+    public CacheBeanFactoryPointCutAdvisor() {
 
     }
 
@@ -40,11 +40,11 @@ public class CacheBeanFactoryPointCutAdvisor extends AbstractBeanFactoryPointcut
         return pointcut;
     }
 
-    void setCacheOperationParser(CacheOperationParser cacheOperationParser) {
+    public void setCacheOperationParser(CacheOperationParser cacheOperationParser) {
         this.cacheOperationParser = cacheOperationParser;
     }
 
-    void setClassFilter(ClassFilter classFilter) {
+    public void setClassFilter(ClassFilter classFilter) {
         this.classFilter = classFilter;
     }
 

@@ -13,8 +13,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class MemcacheCache implements Cache {
 
-    private
-
     @Override
     public String getName() {
         return null;

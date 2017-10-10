@@ -14,14 +14,14 @@ import java.util.UUID;
  * @author shenke
  * @since 17-9-10下午1:55
  */
-@SpringBootTest
-@RunWith(SpringRunner.class)
+//@SpringBootTest
+//@RunWith(SpringRunner.class)
 public class JpaTest {
 
-    @Autowired
+    //@Autowired
     private UserService userService;
 
-    @Test
+    //@Test
     public void testUserDao () {
         User user = new User();
         user.setId(UUID.randomUUID().toString().substring(0,32));
@@ -30,7 +30,7 @@ public class JpaTest {
         userService.save(user);
     }
 
-    @Test
+    //@Test
     public void testFind() {
         User user = userService.findOne("31b9e149-7af8-4d53-803d-5128f8e0");
         System.out.printf(user.getUserName());
