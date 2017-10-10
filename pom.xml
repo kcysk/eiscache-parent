@@ -4,7 +4,7 @@
 
     <groupId>net.zdsoft</groupId>
     <artifactId>eiscache-parent</artifactId>
-    <version>1.0-beta</version>
+    <version>${cache.version}</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -28,6 +28,12 @@
 
         <spring.boot>1.5.3.RELEASE</spring.boot>
         <spring.boot.redis>1.4.6.RELEASE</spring.boot.redis>
+
+        <cache.version>1.0.1-beta</cache.version>
+        <cache.api.version>1.0.1-beta</cache.api.version>
+        <cache.core.version>1.0.1-beta</cache.core.version>
+        <cache.redis.version>1.0-beta</cache.redis.version>
+        <cache.memcache.version>1.0-beta</cache.memcache.version>
     </properties>
 
     <dependencyManagement>

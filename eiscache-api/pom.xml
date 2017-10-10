@@ -3,11 +3,12 @@
     <parent>
         <artifactId>eiscache-parent</artifactId>
         <groupId>net.zdsoft</groupId>
-        <version>1.0-beta</version>
+        <version>1.0.1-beta</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>eiscache-api</artifactId>
+    <version>${cache.api.version}</version>
     <packaging>jar</packaging>
 
     <name>eiscache-core</name>

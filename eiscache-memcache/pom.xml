@@ -3,7 +3,7 @@
     <parent>
         <artifactId>eiscache-parent</artifactId>
         <groupId>net.zdsoft</groupId>
-        <version>1.0-beta</version>
+        <version>1.0.1-beta</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>net.zdsoft</groupId>
             <artifactId>eiscache-core</artifactId>
-            <version>1.0-beta</version>
+            <version>${cache.core.version}</version>
         </dependency>
     </dependencies>
 </project>
