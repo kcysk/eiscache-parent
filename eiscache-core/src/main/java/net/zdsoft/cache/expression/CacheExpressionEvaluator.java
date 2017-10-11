@@ -1,9 +1,12 @@
 package net.zdsoft.cache.expression;
 
-import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.PrioritizedParameterNameDiscoverer;
+import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
+import org.springframework.util.ClassUtils;
 
 /**
  * @author shenke
@@ -38,4 +41,17 @@ public class CacheExpressionEvaluator {
         return getExpression(expression).getValue(context, type);
     }
 
+    static class DefaultParameterNameDiscoverer extends PrioritizedParameterNameDiscoverer {
+
+        private static final boolean standardReflectionAvailable = ClassUtils.isPresent(
+                "java.lang.reflect.Executable", DefaultParameterNameDiscoverer.class.getClassLoader());
+
+
+        public DefaultParameterNameDiscoverer() {
+            //if (standardReflectionAvailable) {
+            //    addDiscoverer(new StandardReflectionParameterNameDiscoverer());
+            //}
+            addDiscoverer(new LocalVariableTableParameterNameDiscoverer());
+        }
+    }
 }

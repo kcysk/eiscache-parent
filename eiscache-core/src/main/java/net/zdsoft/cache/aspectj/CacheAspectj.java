@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
  * @since 2017.08.30
  */
 @Aspect
-class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, DisposableBean{
+class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     @Autowired
     private DynamicCacheClassFilter classFilter;
@@ -39,7 +39,7 @@ class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, Disposa
     private TypeDescriptor typeDescriptor;
 
     private CacheBeanFactoryPointCutAdvisor advisor;
-    private Environment environment;
+    //private Environment environment;
 
     public CacheAspectj() {
     }
@@ -49,10 +49,10 @@ class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, Disposa
 
     }
 
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
+    //@Override
+    //public void setEnvironment(Environment environment) {
+    //    this.environment = environment;
+    //}
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -63,11 +63,11 @@ class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, Disposa
         this.advisor.setClassFilter(new ClassFilterAdapter(classFilter));
         advisor.setCacheOperationParser(parser);
 
-        String slowCache = environment.getProperty("eiscache.slowCache");
-        String slowInvoke = environment.getProperty("eiscache.slowInvoke");
+        //String slowCache = environment.getProperty("eiscache.slowCache");
+        //String slowInvoke = environment.getProperty("eiscache.slowInvoke");
 
-        setSlowCacheTime(NumberUtils.toLong(slowCache, Long.MAX_VALUE));
-        setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Long.MAX_VALUE));
+        setSlowCacheTime(Long.MAX_VALUE);
+        setSlowInvokeTime(Long.MAX_VALUE);
         setCacheOperationParser(parser);
     }
 
