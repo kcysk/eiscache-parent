@@ -10,7 +10,6 @@ import net.zdsoft.cache.proxy.TypeDescriptor;
 import net.zdsoft.cache.support.ReturnTypeContext;
 import net.zdsoft.cache.utils.BeanUtils;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -19,8 +18,6 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.core.env.Environment;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
@@ -39,20 +36,15 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
     private TypeDescriptor typeDescriptor;
 
     private CacheBeanFactoryPointCutAdvisor advisor;
-    //private Environment environment;
 
     public CacheAspectj() {
+
     }
 
     @Override
     public void destroy() throws Exception {
 
     }
-
-    //@Override
-    //public void setEnvironment(Environment environment) {
-    //    this.environment = environment;
-    //}
 
     @Override
     public void afterPropertiesSet() throws Exception {

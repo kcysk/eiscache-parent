@@ -43,14 +43,13 @@ public class CacheExpressionEvaluator {
 
     static class DefaultParameterNameDiscoverer extends PrioritizedParameterNameDiscoverer {
 
-        private static final boolean standardReflectionAvailable = ClassUtils.isPresent(
-                "java.lang.reflect.Executable", DefaultParameterNameDiscoverer.class.getClassLoader());
-
+        private static boolean isJava8 = ClassUtils.isPresent("java.lang.reflect.Parameter",
+                net.zdsoft.cache.expression.StandardReflectionParameterNameDiscoverer.class.getClassLoader());
 
         public DefaultParameterNameDiscoverer() {
-            //if (standardReflectionAvailable) {
-            //    addDiscoverer(new StandardReflectionParameterNameDiscoverer());
-            //}
+            if ( isJava8 ) {
+                addDiscoverer(new StandardReflectionParameterNameDiscoverer());
+            }
             addDiscoverer(new LocalVariableTableParameterNameDiscoverer());
         }
     }

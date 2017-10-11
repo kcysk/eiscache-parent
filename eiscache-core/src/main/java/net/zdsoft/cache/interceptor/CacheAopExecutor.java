@@ -27,6 +27,7 @@ import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
+import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -82,7 +83,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         if ( eventListenerMap != null ) {
             listeners = eventListenerMap.values();
         }
-        afterSingletonsInstantiated();
+        //afterSingletonsInstantiated();
     }
 
     @Override
@@ -90,7 +91,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         this.applicationContext = applicationContext;
     }
 
-
+    @PostConstruct
     public void afterSingletonsInstantiated() {
         try {
             this.cacheManager = beanFactory.getBean(CacheManager.class);
