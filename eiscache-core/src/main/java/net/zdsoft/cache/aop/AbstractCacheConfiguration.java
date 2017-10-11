@@ -1,7 +1,9 @@
-package net.zdsoft.cache.proxy;
+package net.zdsoft.cache.aop;
 
-import net.zdsoft.cache.interceptor.CacheInterceptor;
-import net.zdsoft.cache.interceptor.CacheOperationParser;
+import net.zdsoft.cache.Constant;
+import net.zdsoft.cache.aop.interceptor.CacheAopExecutor;
+import net.zdsoft.cache.aop.interceptor.CacheOperationParser;
+import net.zdsoft.cache.aop.proxy.CacheInterceptor;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -12,14 +14,13 @@ import org.springframework.core.env.Environment;
 
 /**
  * @author shenke
- * @since 2017.09.06
+ * @since 2017.10.11
  */
-//@Configuration
-public class CacheProxyConfiguration implements EnvironmentAware {
+public abstract class AbstractCacheConfiguration implements EnvironmentAware {
 
-    private Environment environment;
+    protected Environment environment;
 
-    @Bean(name = "org.zdsoft.cache.proxy.internalCacheAdvisor")
+    @Bean(name = Constant.BEAN_NAME_ADVISOR)
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor, CacheOperationParser cacheOperationParser, DynamicCacheClassFilter filter) {
         AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
@@ -30,19 +31,6 @@ public class CacheProxyConfiguration implements EnvironmentAware {
     }
 
     @Bean
-    public CacheInterceptor cacheInterceptor(TypeDescriptor typeDescriptor, CacheOperationParser parser){
-        CacheInterceptor cacheInterceptor = new CacheInterceptor();
-        cacheInterceptor.setTypeDescriptor(typeDescriptor);
-
-        String slowCache = environment.getProperty("eiscache.slowCache");
-        String slowInvoke = environment.getProperty("eiscache.slowInvoke");
-        cacheInterceptor.setSlowCacheTime(NumberUtils.toLong(slowCache, Long.MAX_VALUE));
-        cacheInterceptor.setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Long.MAX_VALUE));
-        cacheInterceptor.setCacheOperationParser(parser);
-        return cacheInterceptor;
-    }
-
-    @Bean
     public CacheOperationParser cacheOperationParser() {
         return new CacheOperationParser();
     }
@@ -50,5 +38,12 @@ public class CacheProxyConfiguration implements EnvironmentAware {
     @Override
     public void setEnvironment(Environment environment) {
         this.environment = environment;
+    }
+
+    protected void setSlowTime(CacheAopExecutor aopExecutor) {
+        String slowCache = environment.getProperty(Constant.SLOW_CACHE_NAME);
+        String slowInvoke = environment.getProperty(Constant.SLOW_INVOKE_NAME);
+        aopExecutor.setSlowCacheTime(NumberUtils.toLong(slowCache, Constant.DEFAULT_SLOW_CACHE));
+        aopExecutor.setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Constant.DEFAULT_SLOW_CACHE));
     }
 }

@@ -1,11 +1,13 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.aop.interceptor;
 
 import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.event.CacheEvent;
 import net.zdsoft.cache.event.EventType;
+import net.zdsoft.cache.expiry.Duration;
 import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.listener.CacheRemoveListener;
 import net.zdsoft.cache.support.ReturnTypeContext;
+import org.aopalliance.intercept.MethodInvocation;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Type;
@@ -20,19 +22,15 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractCacheInvoker {
 
     private Logger logger = Logger.getLogger(AbstractCacheInvoker.class);
-    protected abstract CacheErrorHanlder getCacheErrorHandler();
+
+    protected ThreadLocal<MethodInvocation> invocationContext = new ThreadLocal<MethodInvocation>();
+
+    protected abstract CacheErrorHandler getCacheErrorHandler();
 
     protected abstract Collection<CacheEventListener> getCacheEventListener();
 
     protected void doPut(Set<String> entityId, Cache cache, Object key, Object value) {
-        try {
-            //CacheEvent cachePutEvent = new CacheableEvent(EventType.CREATE, );
-            cache.put(entityId, key, value);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            e.printStackTrace();
-            getCacheErrorHandler().doPutError(e, cache, key, value);
-        }
+        doPut(entityId, cache, key, value, 0, null);
     }
 
     protected void doPut(Set<String> entityId,Cache cache, Object key, Object value, int account, TimeUnit timeUnit) {
@@ -45,10 +43,9 @@ public abstract class AbstractCacheInvoker {
         }
     }
 
-    protected Object doGet(Cache cache, Object key, Class<?> returnType) {
+    protected Object doGet(Cache cache, Object key) {
         try {
             Type type = ReturnTypeContext.getReturnType();
-
             return cache.get(key).get(type);
         } catch (RuntimeException e){
             e.printStackTrace();

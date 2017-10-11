@@ -1,4 +1,4 @@
-package net.zdsoft.cache.proxy;
+package net.zdsoft.cache.aop;
 
 /**
  * @author shenke

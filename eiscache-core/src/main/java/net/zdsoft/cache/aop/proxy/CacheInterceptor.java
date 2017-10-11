@@ -1,9 +1,10 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.aop.proxy;
 
+import net.zdsoft.cache.aop.interceptor.CacheAopExecutor;
 import net.zdsoft.cache.utils.BeanUtils;
 import net.zdsoft.cache.core.Invoker;
 import net.zdsoft.cache.support.ReturnTypeContext;
-import net.zdsoft.cache.proxy.TypeDescriptor;
+import net.zdsoft.cache.aop.TypeDescriptor;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -44,7 +45,14 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
             ReturnTypeContext.registerReturnType(this.typeDescriptor.buildType(invocation, targetClass).returnType());
         }
         ReturnTypeContext.registerEntityType(BeanUtils.getFirstGenericType(targetClass));
-        return execute(invoker, invocation.getThis(), invocation.getMethod(), invocation.getArguments(), invocation.getMethod().getReturnType());
+        invocationContext.set(invocation);
+        try {
+            return execute(invoker, invocation.getThis(), invocation.getMethod(), invocation.getArguments(), invocation.getMethod().getReturnType());
+        } finally {
+            invocationContext.remove();
+            ReturnTypeContext.removeEntityType();
+            ReturnTypeContext.removeReturnType();
+        }
     }
 
     public void setTypeDescriptor(TypeDescriptor typeDescriptor) {

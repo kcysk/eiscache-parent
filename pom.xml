@@ -16,6 +16,7 @@
         <module>eiscache-core</module>
         <module>eiscache-redis</module>
         <module>eiscache-memcache</module>
+        <module>eiscache-monitor</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -34,6 +35,7 @@
         <cache.core.version>1.0.1-beta</cache.core.version>
         <cache.redis.version>1.0-beta</cache.redis.version>
         <cache.memcache.version>1.0-beta</cache.memcache.version>
+        <cache.monitor.version>1.0-beta</cache.monitor.version>
     </properties>
 
     <dependencyManagement>

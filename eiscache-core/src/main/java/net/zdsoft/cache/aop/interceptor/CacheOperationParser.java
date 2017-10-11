@@ -1,4 +1,4 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.aop.interceptor;
 
 import net.zdsoft.cache.utils.BeanUtils;
 import net.zdsoft.cache.support.MethodClassKey;
@@ -163,8 +163,7 @@ final public class CacheOperationParser {
         if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
             builder.setCacheName(cacheDefault.cacheName());
         }
-        CacheableOperation cacheableOperation = new CacheableOperation(builder);
-        return cacheableOperation;
+        return new CacheableOperation(builder);
     }
 
     private CacheOperation parseCacheRemove(CacheRemove cacheRemove, CacheDefault cacheDefault) {
@@ -177,7 +176,6 @@ final public class CacheOperationParser {
         if ( "".equals(builder.getCacheName()) && cacheDefault != null ) {
             builder.setCacheName(cacheDefault.cacheName());
         }
-        CacheRemoveOperation cacheRemoveOperation = new CacheRemoveOperation(builder);
-        return cacheRemoveOperation;
+        return new CacheRemoveOperation(builder);
     }
 }

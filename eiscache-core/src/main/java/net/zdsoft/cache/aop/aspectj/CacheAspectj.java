@@ -1,16 +1,12 @@
-package net.zdsoft.cache.aspectj;
+package net.zdsoft.cache.aop.aspectj;
 
+import net.zdsoft.cache.aop.CacheBeanFactoryPointCutAdvisor;
+import net.zdsoft.cache.aop.TypeDescriptor;
+import net.zdsoft.cache.aop.interceptor.CacheAopExecutor;
 import net.zdsoft.cache.core.Invoker;
-import net.zdsoft.cache.interceptor.CacheAopExecutor;
-import net.zdsoft.cache.interceptor.CacheOperationParser;
-import net.zdsoft.cache.proxy.CacheBeanFactoryPointCutAdvisor;
-import net.zdsoft.cache.proxy.ClassFilterAdapter;
-import net.zdsoft.cache.proxy.DynamicCacheClassFilter;
-import net.zdsoft.cache.proxy.TypeDescriptor;
 import net.zdsoft.cache.support.ReturnTypeContext;
 import net.zdsoft.cache.utils.BeanUtils;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -18,9 +14,6 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.EnvironmentAware;
-import org.springframework.core.env.Environment;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
@@ -31,15 +24,18 @@ import java.lang.reflect.Method;
  * @since 2017.08.30
  */
 @Aspect
-class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, DisposableBean{
-
-    @Autowired
-    private DynamicCacheClassFilter classFilter;
-    @Autowired
-    private TypeDescriptor typeDescriptor;
+class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     private CacheBeanFactoryPointCutAdvisor advisor;
-    private Environment environment;
+    private TypeDescriptor typeDescriptor;
+
+    public void setAdvisor(CacheBeanFactoryPointCutAdvisor advisor) {
+        this.advisor = advisor;
+    }
+
+    public void setTypeDescriptor(TypeDescriptor typeDescriptor) {
+        this.typeDescriptor = typeDescriptor;
+    }
 
     public CacheAspectj() {
     }
@@ -47,28 +43,6 @@ class CacheAspectj extends CacheAopExecutor implements EnvironmentAware, Disposa
     @Override
     public void destroy() throws Exception {
 
-    }
-
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        CacheOperationParser parser = new CacheOperationParser();
-
-        this.advisor = new CacheBeanFactoryPointCutAdvisor();
-        this.advisor.setClassFilter(new ClassFilterAdapter(classFilter));
-        advisor.setCacheOperationParser(parser);
-
-        String slowCache = environment.getProperty("eiscache.slowCache");
-        String slowInvoke = environment.getProperty("eiscache.slowInvoke");
-
-        setSlowCacheTime(NumberUtils.toLong(slowCache, Long.MAX_VALUE));
-        setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Long.MAX_VALUE));
-        setCacheOperationParser(parser);
     }
 
     @Pointcut(value = "execution(* (@net.zdsoft.cache.annotation.CacheDefault *).*(..))")

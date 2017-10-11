@@ -1,4 +1,4 @@
-package net.zdsoft.cache.aspectj;
+package net.zdsoft.cache.aop.aspectj;
 
 /**
  * @author shenke

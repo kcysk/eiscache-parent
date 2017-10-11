@@ -1,5 +1,6 @@
 package net.zdsoft.cache.integration.spring;
 
+import net.zdsoft.cache.Constant;
 import net.zdsoft.cache.annotation.EnableCache;
 import org.springframework.context.annotation.AutoProxyRegistrar;
 
@@ -21,14 +22,14 @@ public class CacheConfigurationSelector extends AdviceImportSelector<EnableCache
     }
 
     private String[] getAspectJImport() {
-        return new String[]{"net.zdsoft.cache.aspectj.AspectjCacheConfiguration"};
+        return new String[]{Constant.ASPECTJ_CONFIGURATION_CLASS};
     }
 
     private String[] getProxyImport() {
         List<String> result = new ArrayList<String>(2);
         result.add(AutoProxyRegistrar.class.getName());
         //通过DynamicClassFilter控制
-        result.add("net.zdsoft.cache.proxy.CacheProxyConfiguration");
+        result.add(Constant.PROXY_CONFIGURATION_CLASS);
         return result.toArray(new String[result.size()]);
     }
 

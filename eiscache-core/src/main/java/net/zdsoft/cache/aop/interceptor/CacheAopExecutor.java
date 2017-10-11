@@ -1,4 +1,4 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.aop.interceptor;
 
 import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.core.CacheManager;
@@ -12,7 +12,6 @@ import net.zdsoft.cache.expression.CacheExpressionEvaluator;
 import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.support.DefaultErrorHandler;
 import net.zdsoft.cache.support.MethodClassKey;
-import net.zdsoft.cache.support.ReturnTypeContext;
 import net.zdsoft.cache.utils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.aop.framework.AopProxyUtils;
@@ -49,7 +48,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     private BeanFactory beanFactory ;
     private CacheExpressionEvaluator evaluator = new CacheExpressionEvaluator(new SpelExpressionParser());
     private CacheOperationParser cacheOperationParser;
-    private CacheErrorHanlder cacheErrorHanlder;
+    private CacheErrorHandler cacheErrorHandler;
     private Collection<CacheEventListener> listeners;
     private CacheManager cacheManager;
     private boolean initialized = false;
@@ -83,7 +82,6 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         if ( eventListenerMap != null ) {
             listeners = eventListenerMap.values();
         }
-        afterSingletonsInstantiated();
     }
 
     @Override
@@ -99,9 +97,9 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             throw new RuntimeException("no cacheManager");
         }
         try {
-            this.cacheErrorHanlder = beanFactory.getBean(CacheErrorHanlder.class);
+            this.cacheErrorHandler = beanFactory.getBean(CacheErrorHandler.class);
         } catch (Exception e){
-            this.cacheErrorHanlder = new DefaultErrorHandler();
+            this.cacheErrorHandler = new DefaultErrorHandler();
         }
         if ( this.cacheOperationParser == null ) {
             this.cacheOperationParser = new CacheOperationParser();
@@ -167,9 +165,6 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return invoker.invoke();
         } catch (Throwable throwable) {
             throw new Invoker.ThrowableWrapper(throwable);
-        } finally {
-            ReturnTypeContext.removeEntityType();
-            ReturnTypeContext.removeReturnType();
         }
     }
 
@@ -201,7 +196,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     protected Object getFromCache(CacheInvocationContext invocationContext) {
         if ( invocationContext != null ) {
             Cache cache = invocationContext.getCache();
-            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.UN_AVAILABLE), invocationContext.getReturnType());
+            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.UN_AVAILABLE));
         }
         return null;
     }
@@ -235,8 +230,8 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     }
 
     @Override
-    protected CacheErrorHanlder getCacheErrorHandler() {
-        return this.cacheErrorHanlder;
+    protected CacheErrorHandler getCacheErrorHandler() {
+        return this.cacheErrorHandler;
     }
 
     @Override
@@ -324,7 +319,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
         @Override
         public boolean isCondition(Object result) {
-            Boolean condition = null;
+            Boolean condition;
             try {
                 if ( "".equals(getCacheOperation().getCondition()) ) {
                     return true;
