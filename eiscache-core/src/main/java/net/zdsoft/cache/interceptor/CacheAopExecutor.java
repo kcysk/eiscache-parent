@@ -21,6 +21,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -41,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author shenke
  * @since 2017.09.04
  */
-public abstract class CacheAopExecutor extends AbstractCacheInvoker implements ApplicationContextAware, BeanFactoryAware, InitializingBean {
+public abstract class CacheAopExecutor extends AbstractCacheInvoker implements ApplicationContextAware, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
 
     protected Logger logger = Logger.getLogger(CacheAopExecutor.class);
 
@@ -90,7 +91,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         this.applicationContext = applicationContext;
     }
 
-
+    @Override
     public void afterSingletonsInstantiated() {
         try {
             this.cacheManager = beanFactory.getBean(CacheManager.class);
