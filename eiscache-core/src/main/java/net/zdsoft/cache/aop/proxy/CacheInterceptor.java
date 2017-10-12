@@ -28,7 +28,7 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
                     if ( logger.isDebugEnabled() ) {
                         logger.debug("invoke method " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
                     }
-                    if ( time >= slowInvokeTime ) {
+                    if ( time >= slowInvokeTime && !logger.isDebugEnabled() ) {
                         logger.warn("invoke method + " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
                     }
                     return obj;
@@ -37,7 +37,7 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
                 }
             }
         };
-        //当使用基类和泛型的时候，
+        //当使用基类和泛型的时候，无法获取真正的返回值类型
         Class<?> targetClass = getTargetClass(invocation.getThis());
         if ( this.typeDescriptor == null ) {
             ReturnTypeContext.registerReturnType(invocation.getMethod().getGenericReturnType());

@@ -19,6 +19,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 
 /**
+ * spring 版本低于3.1 请注册该bean <br>
  * cache aspectj 使用spring扫描
  * @author shenke
  * @since 2017.08.30
@@ -53,13 +54,22 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
     @Around(value = "onProcessCacheMethod()")
     public Object executeCacheAround(final ProceedingJoinPoint joinPoint){
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        Method method = methodSignature.getMethod();
+        final Method method = methodSignature.getMethod();
 
         Invoker invoker = new Invoker() {
             @Override
             public Object invoke() {
                 try {
-                    return joinPoint.proceed();
+                    long startTime = System.currentTimeMillis();
+                    Object object = joinPoint.proceed();
+                    long time = System.currentTimeMillis() - startTime;
+                    if ( logger.isDebugEnabled() ) {
+                        logger.debug("invoke method " + getTargetClass(joinPoint.getThis()) + "#" + method.getName() + " time is {" + time + "}ms");
+                    }
+                    if ( time >= slowInvokeTime && !logger.isDebugEnabled() ) {
+                        logger.warn("invoke method + " + getTargetClass(joinPoint.getThis()) + "#" + method.getName() + " time is {" + time + "}ms");
+                    }
+                    return object;
                 } catch (Throwable throwable) {
                     throw new Invoker.ThrowableWrapper(throwable);
                 }
