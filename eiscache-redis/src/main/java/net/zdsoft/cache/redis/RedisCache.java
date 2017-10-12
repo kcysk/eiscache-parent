@@ -195,7 +195,7 @@ public class RedisCache implements Cache {
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.setEx(keyBytes, seconds, byteTransfer.transfer(valueTransfer.transfer(value)));
-                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key), buildEntityIdsArgv(entityId));
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
@@ -222,7 +222,7 @@ public class RedisCache implements Cache {
                 } else {
                     connection.setEx(keyBytes, timeUnit.toSeconds(account), byteTransfer.transfer(valueTransfer.transfer(value)));
                 }
-                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key), buildEntityIdsArgv(entityId));
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
