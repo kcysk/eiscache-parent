@@ -44,6 +44,6 @@ public abstract class AbstractCacheConfiguration implements EnvironmentAware {
         String slowCache = environment.getProperty(Constant.SLOW_CACHE_NAME);
         String slowInvoke = environment.getProperty(Constant.SLOW_INVOKE_NAME);
         aopExecutor.setSlowCacheTime(NumberUtils.toLong(slowCache, Constant.DEFAULT_SLOW_CACHE));
-        aopExecutor.setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Constant.DEFAULT_SLOW_CACHE));
+        aopExecutor.setSlowInvokeTime(NumberUtils.toLong(slowInvoke, Constant.DEFAULT_SLOW_INVOKE));
     }
 }

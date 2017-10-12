@@ -74,10 +74,12 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
             }
             boolean cacheProcess = pointcut.getMethodMatcher().matches(method, targetClass, joinPoint.getArgs());
             if ( cacheProcess ) {
+                MethodInvocation invocation = new AopJoinPointAdapter(joinPoint);
+                invocationContext.set(invocation);
                 if ( this.typeDescriptor == null ) {
                     ReturnTypeContext.registerReturnType(methodSignature.getReturnType());
                 } else {
-                    ReturnTypeContext.registerReturnType(this.typeDescriptor.buildType(new AopJoinPointAdapter(joinPoint), targetClass).returnType());
+                    ReturnTypeContext.registerReturnType(this.typeDescriptor.buildType(invocation, targetClass).returnType());
                 }
                 ReturnTypeContext.registerEntityType(BeanUtils.getFirstGenericType(targetClass));
                 return execute(invoker, joinPoint.getTarget(), method, joinPoint.getArgs(), methodSignature.getReturnType());
@@ -86,21 +88,27 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
         } catch (Invoker.ThrowableWrapper e) {
             ThrowAny.throwUnchecked(e.getOrigin());
             return null; //never
+        } finally {
+            ReturnTypeContext.removeReturnType();
+            ReturnTypeContext.removeEntityType();
+            invocationContext.remove();
         }
     }
 
     private class AopJoinPointAdapter implements MethodInvocation{
 
         private ProceedingJoinPoint joinPoint;
+        private Method method;
 
         public AopJoinPointAdapter(ProceedingJoinPoint joinPoint) {
             this.joinPoint = joinPoint;
+            MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+            this.method = methodSignature.getMethod();
         }
 
         @Override
         public Method getMethod() {
-            MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-            return methodSignature.getMethod();
+            return this.method;
         }
 
         @Override
@@ -120,7 +128,7 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
         @Override
         public AccessibleObject getStaticPart() {
-            return null;
+            return this.method;
         }
     }
 }

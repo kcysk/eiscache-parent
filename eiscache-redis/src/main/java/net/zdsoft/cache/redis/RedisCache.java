@@ -145,6 +145,12 @@ public class RedisCache implements Cache {
 
     @Override
     public <T> T get(Object key, Callable<T> valueLoader) {
+        try {
+            T t = valueLoader.call();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
