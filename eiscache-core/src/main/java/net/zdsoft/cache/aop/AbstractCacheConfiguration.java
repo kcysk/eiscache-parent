@@ -5,11 +5,10 @@ import net.zdsoft.cache.aop.interceptor.CacheAopExecutor;
 import net.zdsoft.cache.aop.interceptor.CacheOperationParser;
 import net.zdsoft.cache.aop.proxy.CacheInterceptor;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 
 /**
@@ -18,14 +17,17 @@ import org.springframework.core.env.Environment;
  */
 public abstract class AbstractCacheConfiguration implements EnvironmentAware {
 
+    protected Logger logger = Logger.getLogger(AbstractCacheConfiguration.class);
     protected Environment environment;
 
-    @Bean(name = Constant.BEAN_NAME_ADVISOR)
-    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor, CacheOperationParser cacheOperationParser, DynamicCacheClassFilter filter) {
         AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
         ((CacheBeanFactoryPointCutAdvisor)advisor).setCacheOperationParser(cacheOperationParser);
-        advisor.setAdvice(cacheInterceptor);
+        if ( cacheInterceptor != null ) {
+            advisor.setAdvice(cacheInterceptor);
+        } else {
+            logger.warn("cacheInterceptor is null sure you cache mode is aspectj");
+        }
         ((CacheBeanFactoryPointCutAdvisor) advisor).setClassFilter(new ClassFilterAdapter(filter));
         return advisor;
     }
