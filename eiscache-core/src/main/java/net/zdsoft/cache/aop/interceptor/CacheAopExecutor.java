@@ -1,4 +1,4 @@
-package net.zdsoft.cache.interceptor;
+package net.zdsoft.cache.aop.interceptor;
 
 import net.zdsoft.cache.core.Cache;
 import net.zdsoft.cache.core.CacheManager;
@@ -12,7 +12,6 @@ import net.zdsoft.cache.expression.CacheExpressionEvaluator;
 import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.support.DefaultErrorHandler;
 import net.zdsoft.cache.support.MethodClassKey;
-import net.zdsoft.cache.support.ReturnTypeContext;
 import net.zdsoft.cache.utils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.aop.framework.AopProxyUtils;
@@ -167,9 +166,6 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
             return invoker.invoke();
         } catch (Throwable throwable) {
             throw new Invoker.ThrowableWrapper(throwable);
-        } finally {
-            ReturnTypeContext.removeEntityType();
-            ReturnTypeContext.removeReturnType();
         }
     }
 

@@ -1,4 +1,4 @@
-package net.zdsoft.cache.aspectj;
+package net.zdsoft.cache.aop.aspectj;
 
 import org.springframework.context.annotation.Import;
 
@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import(CacheAspectj.class)
+@Import(AspectjCacheConfiguration.class)
 public @interface EnableCacheForAspectj {
 
 }

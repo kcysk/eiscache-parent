@@ -1,4 +1,4 @@
-package net.zdsoft.cache.proxy;
+package net.zdsoft.cache.aop;
 
 import net.zdsoft.cache.utils.TypeBuilder;
 import org.aopalliance.intercept.MethodInvocation;

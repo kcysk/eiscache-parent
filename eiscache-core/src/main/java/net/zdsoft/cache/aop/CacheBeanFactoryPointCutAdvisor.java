@@ -1,7 +1,7 @@
-package net.zdsoft.cache.proxy;
+package net.zdsoft.cache.aop;
 
 import net.zdsoft.cache.support.MethodClassKey;
-import net.zdsoft.cache.interceptor.CacheOperationParser;
+import net.zdsoft.cache.aop.interceptor.CacheOperationParser;
 import org.apache.log4j.Logger;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.Pointcut;
