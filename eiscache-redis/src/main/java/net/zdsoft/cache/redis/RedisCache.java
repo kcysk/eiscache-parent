@@ -145,12 +145,6 @@ public class RedisCache implements Cache {
 
     @Override
     public <T> T get(Object key, Callable<T> valueLoader) {
-        try {
-            T t = valueLoader.call();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return null;
     }
 
@@ -201,7 +195,8 @@ public class RedisCache implements Cache {
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 connection.setEx(keyBytes, seconds, byteTransfer.transfer(valueTransfer.transfer(value)));
-                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER,
+                        1, getKey(key), buildEntityIdsArgv(entityId), ID_KEY_PREFIX);
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
@@ -228,7 +223,8 @@ public class RedisCache implements Cache {
                 } else {
                     connection.setEx(keyBytes, timeUnit.toSeconds(account), byteTransfer.transfer(valueTransfer.transfer(value)));
                 }
-                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER, 1, getKey(key));
+                connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER,
+                        1, getKey(key), buildEntityIdsArgv(entityId), ID_KEY_PREFIX);
                 connection.zAdd(KEY_SET_NAME, 0 , keyBytes);
                 return null;
             }
@@ -255,15 +251,13 @@ public class RedisCache implements Cache {
                         getKey(key), byteTransfer.transfer(valueTransfer.transfer(value)));
             }
         });
-        if ( result instanceof byte[] ) {
-            Object returnString = redisTemplate.getKeySerializer().deserialize((byte[]) result);
-            if ( "OK".equals(returnString) ) {
-                return new CacheWrapper(valueTransfer.transfer(value));
-            } else {
-                return new CacheWrapper(returnString.toString());
-            }
+        //FIXME 根据connection.eval() 代码看 result应该是byte[] 但是实际得到的结果并不是 （api需要细看）
+        Object returnString = result instanceof byte[] ? redisTemplate.getKeySerializer().deserialize((byte[]) result) : result;
+        if ( "OK".equals(returnString) ) {
+            return new CacheWrapper(valueTransfer.transfer(value));
+        } else {
+            return new CacheWrapper(returnString.toString());
         }
-        return new CacheWrapper(valueTransfer.transfer(value));
     }
 
     @Override
