@@ -1,5 +1,6 @@
 package net.zdsoft.cache.aop;
 
+import net.zdsoft.cache.Constant;
 import net.zdsoft.cache.aop.interceptor.CacheAopExecutor;
 import net.zdsoft.cache.aop.interceptor.CacheOperationParser;
 import net.zdsoft.cache.aop.proxy.CacheInterceptor;
@@ -23,11 +24,11 @@ public abstract class AbstractCacheConfiguration {
     }
 
     @Autowired
-    public void setAopExecutor(CacheAopExecutor aopExecutor,
-                               @Value(value = "eis-cache.slowCache") long slowCache,
-                               @Value(value = "eis-cache.slowInvoke") long slowInvoke) {
-        aopExecutor.setSlowCacheTime(slowCache);
+    public void setSlowTime(@Value(value = "${" + Constant.SLOW_CACHE_NAME + "}") long slowCache,
+                           @Value(value = "${" + Constant.SLOW_INVOKE_NAME + "}") long slowInvoke,
+                           CacheAopExecutor aopExecutor) {
         aopExecutor.setSlowInvokeTime(slowInvoke);
+        aopExecutor.setSlowCacheTime(slowCache);
     }
 
     public AbstractBeanFactoryPointcutAdvisor cacheAdvisor(CacheInterceptor cacheInterceptor,
@@ -35,8 +36,8 @@ public abstract class AbstractCacheConfiguration {
                                                            DynamicCacheClassFilter filter) {
         AbstractBeanFactoryPointcutAdvisor advisor = new CacheBeanFactoryPointCutAdvisor();
         ((CacheBeanFactoryPointCutAdvisor)advisor).setCacheOperationParser(cacheOperationParser);
-        if ( advisor != null ) {
-            advisor.setAdvice(cacheInterceptor);
+        if ( cacheInterceptor != null ) {
+            advisor.setAdviceBeanName("net.zdsoft.cache.aop.proxy.CacheInterceptor");
         } else {
             logger.warn(" cache interceptor is null ensure cache mode is ASPECTJ ");
         }
