@@ -320,7 +320,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
         @Override
         public boolean isCondition(Object result) {
-            Boolean condition = null;
+            Boolean condition;
             try {
                 if ( "".equals(getCacheOperation().getCondition()) ) {
                     return true;
