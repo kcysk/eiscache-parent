@@ -216,7 +216,8 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public void put(final Set<String> entityId, final Object key, final Object value, final int account, final TimeUnit timeUnit) {
+    public void put(final Set<String> entityId, final Object key, final Object value,
+                    final int account, final TimeUnit timeUnit) {
         if ( account == 0 ) {
             if ( Duration.NEVER.equals(getConfiguration().getExpiry().getCreateExpire()) ) {
                 put(entityId, key, value);
@@ -231,9 +232,11 @@ public class RedisCache implements Cache {
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 if ( TimeUnit.MICROSECONDS.equals(timeUnit) ) {
-                    connection.pSetEx(keyBytes, timeUnit.toMillis(account), byteTransfer.transfer(valueTransfer.transfer(value)));
+                    connection.pSetEx(keyBytes, timeUnit.toMillis(account),
+                            byteTransfer.transfer(valueTransfer.transfer(value)));
                 } else {
-                    connection.setEx(keyBytes, timeUnit.toSeconds(account), byteTransfer.transfer(valueTransfer.transfer(value)));
+                    connection.setEx(keyBytes, timeUnit.toSeconds(account),
+                            byteTransfer.transfer(valueTransfer.transfer(value)));
                 }
                 connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER,
                         1, getKey(key), buildEntityIdsArgv(entityId), ID_KEY_PREFIX);
@@ -287,7 +290,8 @@ public class RedisCache implements Cache {
         Object val = redisTemplate.<Object>execute(new RedisCallback<Long>() {
             @Override
             public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.eval(byteTransfer.transfer(INCR_BY_NOT_KEY_ERROR),ReturnType.INTEGER, 1, getKey(key), String.valueOf(value).getBytes());
+                return connection.eval(byteTransfer.transfer(INCR_BY_NOT_KEY_ERROR),ReturnType.INTEGER,
+                        1, getKey(key), String.valueOf(value).getBytes());
             }
         });
         return (Long)val;
