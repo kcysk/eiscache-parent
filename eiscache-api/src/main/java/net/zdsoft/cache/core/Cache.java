@@ -107,5 +107,7 @@ public interface Cache {
         <T> Set<T> getSet(Type type);
 
         <T> T get(Type genericType);
+
+        String getNative();
     }
 }

@@ -2,9 +2,11 @@ package net.zdsoft.cache.redis;
 
 import net.zdsoft.cache.configuration.Configuration;
 import net.zdsoft.cache.core.Cache;
+import net.zdsoft.cache.core.Invoker;
 import net.zdsoft.cache.expiry.Duration;
 import net.zdsoft.cache.transfer.ByteTransfer;
 import net.zdsoft.cache.transfer.ValueTransfer;
+import net.zdsoft.cache.utils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -145,7 +147,15 @@ public class RedisCache implements Cache {
 
     @Override
     public <T> T get(Object key, Callable<T> valueLoader) {
-        return null;
+        try {
+            Cache.CacheWrapper cacheWrapper = get(key);
+            if ( cacheWrapper.getNative() == null ) {
+                return valueLoader.call();
+            }
+            return cacheWrapper.get(BeanUtils.getFirstGenericType(valueLoader.getClass()));
+        } catch (Exception e) {
+            throw new Invoker.ThrowableWrapper(e);
+        }
     }
 
     @Override
@@ -204,7 +214,8 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public void put(final Set<String> entityId, final Object key, final Object value, final int account, final TimeUnit timeUnit) {
+    public void put(final Set<String> entityId, final Object key, final Object value,
+                    final int account, final TimeUnit timeUnit) {
         if ( account == 0 ) {
             if ( Duration.NEVER.equals(getConfiguration().getExpiry().getCreateExpire()) ) {
                 put(entityId, key, value);
@@ -219,9 +230,11 @@ public class RedisCache implements Cache {
             public Object doInRedis(RedisConnection connection) throws DataAccessException {
                 byte[] keyBytes = getKey(key);
                 if ( TimeUnit.MICROSECONDS.equals(timeUnit) ) {
-                    connection.pSetEx(keyBytes, timeUnit.toMillis(account), byteTransfer.transfer(valueTransfer.transfer(value)));
+                    connection.pSetEx(keyBytes, timeUnit.toMillis(account),
+                            byteTransfer.transfer(valueTransfer.transfer(value)));
                 } else {
-                    connection.setEx(keyBytes, timeUnit.toSeconds(account), byteTransfer.transfer(valueTransfer.transfer(value)));
+                    connection.setEx(keyBytes, timeUnit.toSeconds(account),
+                            byteTransfer.transfer(valueTransfer.transfer(value)));
                 }
                 connection.eval(byteTransfer.transfer(ADD_ID_KEY_SCRIPT), ReturnType.INTEGER,
                         1, getKey(key), buildEntityIdsArgv(entityId), ID_KEY_PREFIX);
@@ -342,6 +355,11 @@ public class RedisCache implements Cache {
         @Override
         public <T> T get(Type genericType) {
             return getConfiguration().getValueTransfer().parseForNative(value, genericType);
+        }
+
+        @Override
+        public String getNative() {
+            return this.value;
         }
     }
 

@@ -19,7 +19,6 @@ public class ClassFilterAdapter implements ClassFilter {
         if ( filter == null ) {
             return false;
         }
-        boolean match = filter.matches(aClass);
-        return match;
+        return filter.matches(aClass);
     }
 }

@@ -33,7 +33,7 @@ final public class CacheOperationParser {
 
         MethodClassKey key = new MethodClassKey(method, targetClass);
         Collection<CacheOperation> cacheOperations = cached.get(key);
-        if ( cacheOperations != null && cacheOperations.size() > 0) {
+        if ( cacheOperations != null ) {
             return cacheOperations;
         }
         cacheOperations = new ArrayList<CacheOperation>();
@@ -48,7 +48,11 @@ final public class CacheOperationParser {
         if ( cacheRemove != null ) {
             cacheOperations.add(parseCacheRemove(cacheRemove, cacheDefault));
         }
-        cached.put(key, cacheOperations);
+        if ( cacheOperations.isEmpty() ) {
+            cached.put(key, EMPTY);
+        } else {
+            cached.put(key, cacheOperations);
+        }
         return cacheOperations;
     }
 
