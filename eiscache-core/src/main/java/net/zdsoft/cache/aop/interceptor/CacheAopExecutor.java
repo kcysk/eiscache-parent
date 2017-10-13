@@ -158,7 +158,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                     logger.debug("process method " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" + time + "}ms");
                 }
                 //缓存处理慢的方法调用全部日志记录下来
-                if ( time >= slowCacheTime ) {
+                if ( time >= slowCacheTime && !logger.isDebugEnabled() ) {
                     logger.warn("slow cache operation " + targetClass.getName() + "#" + method.getName() + " cache operation time is {" +time + "}ms");
                 }
                 return result;
