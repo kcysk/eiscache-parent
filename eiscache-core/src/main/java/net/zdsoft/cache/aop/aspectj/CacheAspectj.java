@@ -58,14 +58,23 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
 
     @Around(value = "onProcessCacheMethod()")
     public Object executeCacheAround(final ProceedingJoinPoint joinPoint){
-        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        Method method = methodSignature.getMethod();
+        final MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        final Method method = methodSignature.getMethod();
 
         Invoker invoker = new Invoker() {
             @Override
             public Object invoke() {
                 try {
-                    return joinPoint.proceed();
+                    long start = System.currentTimeMillis();
+                    Object obj = joinPoint.proceed();
+                    long time = System.currentTimeMillis() - start;
+                    if ( logger.isDebugEnabled() ) {
+                        logger.debug("invoke method " + getTargetClass(joinPoint.getThis()) + "#" + method.getName() + " time is {" + time + "}ms");
+                    }
+                    if ( time >= slowInvokeTime && !logger.isDebugEnabled() ) {
+                        logger.warn("invoke method " + getTargetClass(joinPoint.getThis()) + "#" + method.getName() + " time is {" + time + "}ms");
+                    }
+                    return obj;
                 } catch (Throwable throwable) {
                     throw new Invoker.ThrowableWrapper(throwable);
                 }

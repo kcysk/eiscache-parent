@@ -2,9 +2,11 @@ package net.zdsoft.cache.redis;
 
 import net.zdsoft.cache.configuration.Configuration;
 import net.zdsoft.cache.core.Cache;
+import net.zdsoft.cache.core.Invoker;
 import net.zdsoft.cache.expiry.Duration;
 import net.zdsoft.cache.transfer.ByteTransfer;
 import net.zdsoft.cache.transfer.ValueTransfer;
+import net.zdsoft.cache.utils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -145,7 +147,17 @@ public class RedisCache implements Cache {
 
     @Override
     public <T> T get(Object key, Callable<T> valueLoader) {
-        return null;
+        try {
+            Cache.CacheWrapper cacheWrapper = get(key);
+            Object value = cacheWrapper.getNative();
+            if ( value == null ) {
+                return valueLoader.call();
+            }
+            Type type = BeanUtils.getFirstGenericType(valueLoader.getClass());
+            return cacheWrapper.get(type);
+        } catch (Exception e) {
+            throw new Invoker.ThrowableWrapper(e);
+        }
     }
 
     @Override
@@ -271,7 +283,7 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public long incrBy(final Object key, final int value) {
+    public long incrBy(final Object key, final long value) {
         Object val = redisTemplate.<Object>execute(new RedisCallback<Long>() {
             @Override
             public Long doInRedis(RedisConnection connection) throws DataAccessException {
@@ -341,6 +353,11 @@ public class RedisCache implements Cache {
         @Override
         public <T> T get(Type genericType) {
             return getConfiguration().getValueTransfer().parseForNative(value, genericType);
+        }
+
+        @Override
+        public String getNative() {
+            return value;
         }
     }
 
