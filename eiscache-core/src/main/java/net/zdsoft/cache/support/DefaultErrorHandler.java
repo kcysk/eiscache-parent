@@ -11,16 +11,16 @@ public class DefaultErrorHandler implements CacheErrorHandler {
 
     @Override
     public void doPutError(RuntimeException e, Cache cache, Object key, Object value) {
-
+        throw e;
     }
 
     @Override
-    public void doRemoveError(RuntimeException e, Cache cache, Object key) {
-
+    public void doRemoveError(RuntimeException e, Cache cache, Object ... key) {
+        throw e;
     }
 
     @Override
     public void doGetError(RuntimeException e, Cache cache, Object key) {
-
+        throw e;
     }
 }

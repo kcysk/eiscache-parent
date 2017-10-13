@@ -37,8 +37,6 @@ public abstract class AbstractCacheInvoker {
         try {
             cache.put(entityId, key, value, account, timeUnit);
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            logger.error(e);
             getCacheErrorHandler().doPutError(e, cache, key, value);
         }
     }
@@ -48,7 +46,6 @@ public abstract class AbstractCacheInvoker {
             Type type = ReturnTypeContext.getReturnType();
             return cache.get(key).get(type);
         } catch (RuntimeException e){
-            e.printStackTrace();
             getCacheErrorHandler().doGetError(e, cache, key);
         }
         return null;
@@ -57,11 +54,10 @@ public abstract class AbstractCacheInvoker {
     protected void doRemove(final Cache cache, final Object key, Set<String> entityId) {
         try {
             CacheEvent cacheEvent = new CacheEvent(cache, EventType.REMOVE);
-            cacheEvent.setKey(key);
+            cacheEvent.setKey(new Object[]{key});
             notifyListener(cacheEvent);
             cache.remove(entityId, key);  //FIXME 可改为异步处理
         } catch (RuntimeException e){
-            e.printStackTrace();
             getCacheErrorHandler().doRemoveError(e, cache, key);
         }
     }
@@ -69,8 +65,8 @@ public abstract class AbstractCacheInvoker {
     protected void doRemoveAll(Cache cache) {
         try {
             cache.removeAll();
-        } catch (Exception e){
-            e.printStackTrace();
+        } catch (RuntimeException e){
+            getCacheErrorHandler().doRemoveError(e, cache);
         }
     }
 
@@ -78,7 +74,7 @@ public abstract class AbstractCacheInvoker {
         try {
             cache.remove(entityId, keys);
         } catch (RuntimeException e) {
-            e.printStackTrace();
+            getCacheErrorHandler().doRemoveError(e, cache, keys);
         }
     }
 

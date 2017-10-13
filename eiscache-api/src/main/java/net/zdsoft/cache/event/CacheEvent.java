@@ -13,7 +13,7 @@ public class CacheEvent extends EventObject {
     private Cache cache;
     private EventType eventType;
 
-    private Object key;
+    private Object[] key;
     private Object value;
     private long duration;
 
@@ -36,7 +36,7 @@ public class CacheEvent extends EventObject {
         return key;
     }
 
-    public CacheEvent setKey(Object key) {
+    public CacheEvent setKey(Object[] key) {
         this.key = key;
         return this;
     }
