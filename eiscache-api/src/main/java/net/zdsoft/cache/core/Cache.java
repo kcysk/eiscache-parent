@@ -89,7 +89,7 @@ public interface Cache {
 
     void destroy();
 
-    long incrBy(Object key, int value);
+    long incrBy(Object key, long value);
 
     /**
      * 复杂Map，List请自行转换

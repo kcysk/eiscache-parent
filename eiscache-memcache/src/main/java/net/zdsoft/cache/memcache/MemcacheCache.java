@@ -84,7 +84,7 @@ public class MemcacheCache implements Cache {
     }
 
     @Override
-    public long incrBy(Object key, int value) {
+    public long incrBy(Object key, long value) {
         return 0;
     }
 }

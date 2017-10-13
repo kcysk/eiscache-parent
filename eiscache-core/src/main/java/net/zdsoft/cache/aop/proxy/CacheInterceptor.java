@@ -29,7 +29,7 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
                         logger.debug("invoke method " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
                     }
                     if ( time >= slowInvokeTime && !logger.isDebugEnabled() ) {
-                        logger.warn("invoke method + " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
+                        logger.warn("invoke method " + getTargetClass(invocation.getThis()) + "#" + invocation.getMethod().getName() + " time is {" + time + "}ms");
                     }
                     return obj;
                 } catch (Throwable throwable) {

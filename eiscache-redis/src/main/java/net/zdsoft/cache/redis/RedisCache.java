@@ -271,11 +271,12 @@ public class RedisCache implements Cache {
     }
 
     @Override
-    public long incrBy(final Object key, final int value) {
+    public long incrBy(final Object key, final long value) {
         Object val = redisTemplate.<Object>execute(new RedisCallback<Long>() {
             @Override
             public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.eval(byteTransfer.transfer(INCR_BY_NOT_KEY_ERROR),ReturnType.INTEGER, 1, getKey(key), String.valueOf(value).getBytes());
+                return connection.eval(byteTransfer.transfer(INCR_BY_NOT_KEY_ERROR),ReturnType.INTEGER,
+                        1, getKey(key), String.valueOf(value).getBytes());
             }
         });
         return (Long)val;
