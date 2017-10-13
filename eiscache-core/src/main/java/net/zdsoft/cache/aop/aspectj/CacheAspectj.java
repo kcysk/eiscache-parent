@@ -94,7 +94,7 @@ class CacheAspectj extends CacheAopExecutor implements DisposableBean{
                 } else {
                     ReturnTypeContext.registerReturnType(this.typeDescriptor.buildType(new AopJoinPointAdapter(joinPoint), targetClass).returnType());
                 }
-                ReturnTypeContext.registerEntityType(BeanUtils.getFirstGenericType(targetClass));
+                ReturnTypeContext.registerEntityType((Class<?>) BeanUtils.getFirstGenericType(targetClass));
                 return execute(invoker, joinPoint.getTarget(), method, joinPoint.getArgs(), methodSignature.getReturnType());
             }
             return invoker.invoke();

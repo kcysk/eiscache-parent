@@ -1,6 +1,6 @@
 package net.zdsoft.cache.utils;
 
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.log4j.Logger;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -22,6 +22,8 @@ import java.util.Set;
  * @since 2017.09.11
  */
 public class BeanUtils {
+
+    private static Logger logger = Logger.getLogger(BeanUtils.class);
 
     public static final Set<Class<?>> NATIVE_TYPE = new HashSet<Class<?>>(){{
         add(int.class);
@@ -82,44 +84,43 @@ public class BeanUtils {
      * @param <E>
      * @return
      */
-    public static  <O,E> Class<O> getGenericType(Class<E> eClass, int number) {
-
-        try {
-            Type type = eClass.getGenericSuperclass();
-            if ( Object.class.equals(type) ) {
-                Type[] types = eClass.getGenericInterfaces();
-                if ( types != null ) {
-                    for (Type type1 : types) {
-                        if ( type1 instanceof ParameterizedType ) {
-                            Type[] argumentTypes = ((ParameterizedType)type1).getActualTypeArguments();
-                            if ( number > argumentTypes.length ){
-                                break;
-                            } else {
-                                if ( argumentTypes[number-1] instanceof TypeVariable ) {
-                                    return null;
-                                }
-                                return (Class<O>) argumentTypes[number-1];
-                            }
+    public static  <E> Type getGenericType(Class<E> eClass, int number) {
+        Type superType = eClass.getGenericSuperclass();
+        //超类
+        if ( !Object.class.equals(superType) ) {
+            if ( superType instanceof ParameterizedType ) {
+                Type[] actualTypeArguments = ((ParameterizedType) superType).getActualTypeArguments();
+                Type genericType = actualTypeArguments[number - 1];
+                if ( genericType instanceof TypeVariable ) {
+                    logger.error(eClass.getName() + " generic type is TypeVariable ");
+                    return null;
+                }
+                return genericType;
+            }
+        }
+        //接口
+        else {
+            Type[] interfaceTypes = eClass.getGenericInterfaces();
+            for ( Type interfaceType : interfaceTypes ) {
+                if ( interfaceType instanceof ParameterizedType ) {
+                    Type[] interfaceAcualArgumentsTypes = ((ParameterizedType)interfaceType).getActualTypeArguments();
+                    if ( interfaceAcualArgumentsTypes.length > number ) {
+                        Type genericType = interfaceAcualArgumentsTypes[number - 1];
+                        if ( genericType instanceof TypeVariable ) {
+                            logger.error(eClass.getName() + " generic type is TypeVariable ");
+                            return null;
                         }
+                        return genericType;
+                    } else {
+                        continue;
                     }
                 }
-                return null;
             }
-            Type[] types = ((ParameterizedType)type).getActualTypeArguments();
-            if ( ArrayUtils.isEmpty(types) ) {
-                return null;
-            }
-            if ( number > types.length + 1 ) {
-                return (Class<O>) types[types.length-1];
-            }
-            return (Class<O>) types[number-1];
-        } catch (Exception e) {
-
         }
         return null;
     }
 
-    public static <O,E> Class<O> getFirstGenericType(Class<E> eClass) {
+    public static <E> Type getFirstGenericType(Class<E> eClass) {
 
         return getGenericType(eClass, 1);
     }
@@ -132,11 +133,11 @@ public class BeanUtils {
         }
     }
 
-    public static Class<?> getRowType(Type type) {
+    public static Type getRowType(Type type) {
         if ( type instanceof ParameterizedType) {
-            return (Class<?>) ((ParameterizedType)type).getRawType();
+            return ((ParameterizedType)type).getRawType();
         }
-        return (Class<?>) type;
+        return type;
     }
 
     public static List<Type> getActualTypeArguments(Type type) {
@@ -150,6 +151,13 @@ public class BeanUtils {
             }
         }
         return typeArguments;
+    }
+
+    public static Type getOwnerType(Type type) {
+        if ( type instanceof ParameterizedType ) {
+            return ((ParameterizedType)type).getOwnerType();
+        }
+        return null;
     }
 
     public static final String getArrayHash(Object obj) {

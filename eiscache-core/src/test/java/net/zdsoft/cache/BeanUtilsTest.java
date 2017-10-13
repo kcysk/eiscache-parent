@@ -7,6 +7,8 @@ import net.zdsoft.cache.service.BaseService;
 import net.zdsoft.cache.utils.BeanUtils;
 import org.junit.Test;
 
+import java.util.List;
+
 /**
  * @author shenke
  * @since 2017.09.27
@@ -20,16 +22,29 @@ public class BeanUtilsTest {
     }
 
     //@Test
-    public void testTypeDerivation() {
-        testType(new GenericInterface<User>() {
-        });
+    public static void main(String[] args) {
+        GenericClass<List<User>> genericClass = new GenericClass<List<User>>() {};
+        System.out.println(BeanUtils.getFirstGenericType(genericClass.getClass()));
     }
 
-    public <T> void testType(GenericInterface<T> tGenericInterface) {
+    public <T> void testType(GenericInterface tGenericInterface) {
         //testType(new GenericInterface<T>() {});
     }
 
-    interface GenericInterface<T> {
 
-    }
+}
+abstract class GenericInterface<T> {
+
+}
+
+abstract class GenericClass<T> implements TypeInterface<T>, TypeInterfaceTwo {
+
+}
+
+interface TypeInterface<T> {
+
+}
+
+interface TypeInterfaceTwo{
+
 }
