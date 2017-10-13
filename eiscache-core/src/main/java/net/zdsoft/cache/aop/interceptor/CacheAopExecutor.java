@@ -197,7 +197,7 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
     protected Object getFromCache(CacheInvocationContext invocationContext) {
         if ( invocationContext != null ) {
             Cache cache = invocationContext.getCache();
-            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.UN_AVAILABLE), invocationContext.getReturnType());
+            return doGet(cache, invocationContext.generateKey(CacheExpressionEvaluator.UN_AVAILABLE));
         }
         return null;
     }

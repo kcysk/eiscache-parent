@@ -10,7 +10,7 @@ public interface CacheErrorHanlder {
 
     void doPutError(RuntimeException e, Cache cache, Object key, Object value);
 
-    void doRemoveError(RuntimeException e, Cache cache, Object key);
+    void doRemoveError(RuntimeException e, Cache cache, Object ... key);
 
     void doGetError(RuntimeException e, Cache cache, Object key);
 }
