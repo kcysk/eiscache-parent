@@ -92,7 +92,7 @@ public class BeanUtils {
                     for (Type type1 : types) {
                         if ( type1 instanceof ParameterizedType ) {
                             Type[] argumentTypes = ((ParameterizedType)type1).getActualTypeArguments();
-                            if ( number > argumentTypes.length ){
+                            if ( number >= argumentTypes.length ){
                                 break;
                             } else {
                                 if ( argumentTypes[number-1] instanceof TypeVariable ) {
