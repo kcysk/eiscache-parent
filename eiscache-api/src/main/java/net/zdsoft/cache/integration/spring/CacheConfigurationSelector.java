@@ -26,7 +26,6 @@ public class CacheConfigurationSelector extends AdviceImportSelector<EnableCache
 
     private String[] getProxyImport() {
         List<String> result = new ArrayList<String>(2);
-        //result.add(AutoProxyRegistrar.class.getName());
         //通过DynamicClassFilter控制
         result.add(Constant.PROXY_CONFIGURATION_CLASS);
         return result.toArray(new String[result.size()]);

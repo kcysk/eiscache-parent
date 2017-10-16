@@ -27,7 +27,7 @@ public class JSONValueTransfer implements ValueTransfer {
             return null;
         }
         Map<Object, Object> map = JSON.parseObject(s, Map.class);
-        Map<K,V> realTypeMap = new HashMap<K,V>();
+        Map<K,V> realTypeMap = new HashMap<K,V>(15);
         for (Map.Entry<Object, Object> entry : map.entrySet()) {
             K k = parseForNative(toString(entry.getKey()), kClass);
             V v = parseForNative(toString(entry.getValue()), vClass);

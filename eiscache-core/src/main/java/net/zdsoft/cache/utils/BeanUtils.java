@@ -77,8 +77,7 @@ public class BeanUtils {
     }
 
     /**
-     * FIXME error
-     * @param eClass
+     * 获取泛型     * @param eClass
      * @param number
      * @param <O>
      * @param <E>
@@ -104,7 +103,7 @@ public class BeanUtils {
             for ( Type interfaceType : interfaceTypes ) {
                 if ( interfaceType instanceof ParameterizedType ) {
                     Type[] interfaceAcualArgumentsTypes = ((ParameterizedType)interfaceType).getActualTypeArguments();
-                    if ( interfaceAcualArgumentsTypes.length > number ) {
+                    if ( interfaceAcualArgumentsTypes.length >= number ) {
                         Type genericType = interfaceAcualArgumentsTypes[number - 1];
                         if ( genericType instanceof TypeVariable ) {
                             logger.error(eClass.getName() + " generic type is TypeVariable ");

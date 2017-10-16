@@ -13,6 +13,8 @@ import java.util.Set;
  */
 public class CacheEvaluationContext extends MethodBasedEvaluationContext {
 
+    public static final String VARIABLE_RESULT = "result";
+
     final Set<String> unavailable = new HashSet<String>();
 
     public CacheEvaluationContext(Object rootObject, Method method, Object[] arguments, ParameterNameDiscoverer parameterNameDiscoverer) {

@@ -365,10 +365,11 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
                 logger.debug(targetClass.getName() + "#" + method.getName() + " entity ids is " + Arrays.toString(entityIds.toArray(new Object[entityIds.size()])));
             }
             Set<String> idSet = new HashSet<String>();
-            if ( entityIds != null && !entityIds.isEmpty())
-            for (Object id : entityIds) {
-                if ( id != null ) {
-                    idSet.add(id.toString());
+            if ( entityIds != null && !entityIds.isEmpty()) {
+                for (Object id : entityIds) {
+                    if ( id != null ) {
+                        idSet.add(id.toString());
+                    }
                 }
             }
             return idSet;
@@ -383,10 +384,10 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
         protected EvaluationContext buildContext(Object result) {
             CacheEvaluationContext context = new CacheEvaluationContext(this, getMethod(), getArgs(), evaluator.getParameterNameDiscoverer());
             if ( result == CacheExpressionEvaluator.UN_AVAILABLE ) {
-                context.setUnavailable("result");
+                context.setUnavailable(CacheEvaluationContext.VARIABLE_RESULT);
             }
             if ( result != CacheExpressionEvaluator.NO_RESULT ) {
-                context.setVariable("result", result);
+                context.setVariable(CacheEvaluationContext.VARIABLE_RESULT, result);
             }
             try {
                 context.registerFunction("getFirstGenericType", BeanUtils.class.getMethod("getFirstGenericType", Class.class));
