@@ -59,6 +59,8 @@ public class RedisCache implements Cache {
     private byte[] KEY_SET_NAME;
     private byte[] ID_KEY_PREFIX;
 
+    private static final String REDIS_OK = "OK";
+
     protected RedisCache(RedisTemplate redisTemplate, String name, String cacheGlobalPrefix, Configuration configuration) {
         this.cacheConfiguration = configuration;
         this.byteTransfer = configuration.getByteTransfer();
@@ -266,7 +268,7 @@ public class RedisCache implements Cache {
         });
         //FIXME 根据connection.eval() 代码看 result应该是byte[] 但是实际得到的结果并不是 （api需要细看）
         Object returnString = result instanceof byte[] ? redisTemplate.getKeySerializer().deserialize((byte[]) result) : result;
-        if ( "OK".equals(returnString) ) {
+        if ( REDIS_OK.equals(returnString) ) {
             return new CacheWrapper(valueTransfer.transfer(value));
         } else {
             return new CacheWrapper(returnString.toString());
@@ -331,18 +333,22 @@ public class RedisCache implements Cache {
             this.value = value;
         }
 
+        @Override
         public <T> T getEntity(Class<T> tClass) {
             return getConfiguration().getValueTransfer().parseForNative(value, tClass);
         }
 
+        @Override
         public <K,V> Map<K,V> getMap(Type kClass, Type vClass) {
             return getConfiguration().getValueTransfer().parseFor(value, kClass, vClass);
         }
 
+        @Override
         public <T> List<T> getList(Type tClass) {
             return getConfiguration().getValueTransfer().parseForList(value, tClass);
         }
 
+        @Override
         public <T> Set<T> getSet(Type tClass) {
             return getConfiguration().getValueTransfer().parseForSet(value, tClass);
         }
