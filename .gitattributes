@@ -1,2 +1,2 @@
-*.lua   linguist-language=lua
 *.java  linguist-language=java
+*.lua   linguist-language=lua
