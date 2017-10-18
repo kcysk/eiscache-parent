@@ -44,7 +44,7 @@ public class CacheInterceptor extends CacheAopExecutor implements MethodIntercep
         } else {
             ReturnTypeContext.registerReturnType(this.typeDescriptor.buildType(invocation, targetClass).returnType());
         }
-        ReturnTypeContext.registerEntityType(BeanUtils.getFirstGenericType(targetClass));
+        ReturnTypeContext.registerEntityType((Class<?>) BeanUtils.getFirstGenericType(targetClass));
         invocationContext.set(invocation);
         try {
             return execute(invoker, invocation.getThis(), invocation.getMethod(), invocation.getArguments(), invocation.getMethod().getReturnType());
