@@ -1,1 +1,2 @@
 *.yml linguist-language=java
+*.lua linguist-language=lua
