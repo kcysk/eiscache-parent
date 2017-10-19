@@ -177,6 +177,9 @@ public class BeanUtils {
                 if ( o == null ){
                     continue;
                 }
+                if ( o instanceof Integer ) {
+                    o = o.toString();
+                }
                 hashCode += o.hashCode();
             }
         }
@@ -184,6 +187,9 @@ public class BeanUtils {
             for (Object o : (Collection) obj) {
                 if ( o == null ){
                     continue;
+                }
+                if ( o instanceof Integer) {
+                    o = o.toString();
                 }
                 hashCode += o.hashCode();
             }
