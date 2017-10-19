@@ -1,5 +1,4 @@
 
-***
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 ## 说明
@@ -34,7 +33,7 @@ public interface BaseService<T extends BaseEntity, K extends java.io.Serializabl
 
 普通接口使用
 ```java
-@CacheDefault(cacheName="'user'") //若继承baseService则子类可不用次注解
+@CacheDefault(cacheName="'user'") //若继承baseService则可不用该注解
 public interface UserService extends BaseService<User, String>{
     @Cacheable(entityId="#root.args[0]", expire=100, timeUnit=java.util.concurrent.TimeUnit.HOURS)
     List<User> findUsersByIds(String[] ids);
