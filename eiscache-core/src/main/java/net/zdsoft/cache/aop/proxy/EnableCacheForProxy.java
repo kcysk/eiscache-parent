@@ -1,6 +1,5 @@
 package net.zdsoft.cache.aop.proxy;
 
-import net.zdsoft.cache.aop.aspectj.AspectjCacheConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.Documented;
@@ -16,7 +15,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import(AspectjCacheConfiguration.class)
+@Import(CacheProxyConfiguration.class)
 public @interface EnableCacheForProxy {
 
 }
