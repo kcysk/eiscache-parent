@@ -28,6 +28,7 @@ import net.zdsoft.cache.listener.CacheEventListener;
 import net.zdsoft.cache.support.DefaultErrorHandler;
 import net.zdsoft.cache.support.MethodClassKey;
 import net.zdsoft.cache.utils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeansException;
@@ -390,6 +391,9 @@ public abstract class CacheAopExecutor extends AbstractCacheInvoker implements A
 
         @Override
         public String cacheName() {
+            if (StringUtils.isBlank(getCacheOperation().getCacheName())) {
+                return null;
+            }
             EvaluationContext context = buildContext(null);
             return evaluator.getValue(getCacheOperation().getCacheName(), context, String.class);
         }
